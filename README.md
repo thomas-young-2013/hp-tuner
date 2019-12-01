@@ -1,4 +1,4 @@
-## An Fast Hyperparameter Optimization Method: HOIST
+## Fast Hyperparameter Optimization Method: HOIST
 In this project, we implement a hyperparameter optimization method named HOIST
 
 ## Installation
