@@ -11,6 +11,7 @@ parser.add_argument('--runtime_limit', type=int, default=21600)
 
 args = parser.parse_args()
 
+sys.path.append('/home/daim_gpu/sy/hp-tuner')
 sys.path.append('/home/thomas/Desktop/codes/hp-tuner')
 sys.path.append('/home/daim/thomas/hp-tuner')
 sys.path.append('/home/liyang/codes/hp-tuner')
@@ -23,10 +24,9 @@ from hoist.evaluate_function.eval_xgb import train
 from hoist.facade.bohb import BOHB
 from hoist.facade.hb import Hyperband
 from hoist.facade.hoist import XFHB
-from hoist.facade.hoist_opt import HOIST
+from hoist.facade.mfse import MFSE
 from hoist.facade.batch_bo import SMAC
 from hoist.facade.baseline_iid import BaseIID
-
 
 benchmark = 'xgb'
 iter_num = args.iter
@@ -82,13 +82,14 @@ def test_bohb(cs, id):
     model.restart_needed = True
     model.run()
     result = model.get_incumbent(5)
+    print(model.incumbent_configs)
     print(result)
     return result
 
 
 def test_hoist(cs, id, scale_mth=6):
     if scale_mth <= 6:
-        weight = [0.2]*5
+        weight = [0.2] * 5
     elif scale_mth == 7:
         weight = [0.0625, 0.125, 0.25, 0.5, 1.0]
     else:
@@ -107,6 +108,47 @@ def test_hoist(cs, id, scale_mth=6):
     np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
     return model.get_incumbent(5)
 
+
+def test_mfse_average(cs, id):
+    model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
+                 update_enable=False)
+    method_name = "MFSE_AVERAGE-xgb-%d" % id
+    model.method_name = method_name
+    model.runtime_limit = 27000
+    model.restart_needed = True
+    model.run()
+    print(model.get_incumbent(5))
+    weights = model.get_weights()
+    np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
+    return model.get_incumbent(5)
+
+
+def test_mfse_single(cs, id):
+    init_weight = [1, 0, 0, 0, 0]
+    model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
+                 update_enable=True, multi_surrogate=False, init_weight=init_weight)
+    method_name = "MFSE_SINGLE-xgb-%d" % id
+    model.method_name = method_name
+    model.runtime_limit = 27000
+    model.restart_needed = True
+    model.run()
+    print(model.get_incumbent(5))
+    weights = model.get_weights()
+    np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
+    return model.get_incumbent(5)
+
+def test_mfse(cs, id):
+    model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
+                 update_enable=True)
+    method_name = "MFSE_xgb-%d" % id
+    model.method_name = method_name
+    model.runtime_limit = 27000
+    model.restart_needed = True
+    model.run()
+    print(model.get_incumbent(5))
+    weights = model.get_weights()
+    np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
+    return model.get_incumbent(5)
 
 def create_configspace():
     cs = ConfigurationSpace()
@@ -135,5 +177,5 @@ if __name__ == "__main__":
     # test_hb(cs, 1)
     # test_bohb(cs, 1)
     # test_old_hoist(cs, 1)
-    test_hoist(cs, 0)
-    test_hoist(cs, 1)
+    # test_hoist_average(cs, 0)
+    test_mfse(cs, 0)

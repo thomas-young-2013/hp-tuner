@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import os
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -12,7 +13,9 @@ from hoist.utils.ease import ease_target
 def load_covtype():
     file_path = 'data/covtype/covtype.data'
     data = pd.read_csv(file_path, delimiter=',', header=None).values
-    return data[:, :-1], data[:, -1] - 1
+    x = data[:, :-1]
+    y = data[:, -1] - 1
+    return x, y
 
 
 X, y = load_covtype()
@@ -30,7 +33,7 @@ def train(resource_num, params, logger=None):
     global x_train, y_train
     s_max = x_train.shape[0]
     # Create the subset of the full dataset.
-    subset_size = resource_num*resource_unit
+    subset_size = resource_num * resource_unit
     shuffle = np.random.permutation(np.arange(s_max))
     train_samples = x_train[shuffle[:subset_size]]
     train_lables = y_train[shuffle[:subset_size]]

@@ -1,6 +1,7 @@
 import sys
 import argparse
 import numpy as np
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['local', 'server'], default='local')
@@ -11,6 +12,7 @@ parser.add_argument('--iter_c', type=int, default=5)
 
 args = parser.parse_args()
 
+sys.path.append('/home/daim_gpu/sy/hp-tuner')
 sys.path.append('/home/thomas/Desktop/codes/hp-tuner')
 sys.path.append('/home/daim/thomas/hp-tuner')
 
@@ -25,7 +27,7 @@ from hoist.facade.batch_bo import SMAC
 from hoist.facade.mbhb import MBHB
 from hoist.facade.bo_es import SMAC_ES
 from hoist.facade.baseline_iid import BaseIID
-
+from hoist.facade.mfse import MFSE
 
 iter_num = args.iter
 maximal_iter = args.R
@@ -60,6 +62,7 @@ def test_hb(cs, id):
 
 def test_bohb(cs, id):
     bohb = BOHB(cs, train, maximal_iter, num_iter=iter_num, p=0.2, n_workers=n_work)
+    bohb.method_name = "BOHB-fcnet-%d" % id
     bohb.run()
     bohb.plot_statistics(method="BOHB-fcnet-%d" % id)
     print(bohb.get_incumbent(5))
@@ -68,7 +71,7 @@ def test_bohb(cs, id):
 
 def test_hoist(cs, id, scale_mth=1):
     if scale_mth <= 6:
-        weight = [0.2]*5
+        weight = [0.2] * 5
     elif scale_mth == 7:
         weight = [0.0625, 0.125, 0.25, 0.5, 1.0]
     else:
@@ -86,6 +89,21 @@ def test_hoist(cs, id, scale_mth=1):
     weights = hoist.get_weights()
     np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
     return hoist.get_incumbent(5)
+
+
+def test_mfse(cs, id):
+    init_weight = [0.2, 0.1, 0.7]
+    model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
+                 update_enable=True, init_weight=init_weight)
+    method_name = "MFSE_fcnet-%d" % id
+    model.method_name = method_name
+    model.runtime_limit = 19000
+    model.restart_needed = True
+    model.run()
+    print(model.get_incumbent(5))
+    weights = model.get_weights()
+    np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
+    return model.get_incumbent(5)
 
 
 def test_mbhb(cs, id):
@@ -130,7 +148,7 @@ def test_baseline_iid(cs, id):
     return mbhb.get_incumbent(5)
 
 
-if __name__ == "__main__":
+def create_configspace():
     cs = ConfigurationSpace()
     learning_rate = UniformFloatHyperparameter("learning_rate", 1e-4, 1e-2, default_value=1e-3, q=2e-4)
     momentum = UniformFloatHyperparameter("momentum", 0., .5, default_value=0., q=.1)
@@ -144,9 +162,11 @@ if __name__ == "__main__":
     kernel_regularizer = UniformFloatHyperparameter("k_reg", 1e-9, 1e-4, default_value=1e-6, q=5e-7, log=True)
     cs.add_hyperparameters([learning_rate, momentum, lr_decay, n_layer1, n_layer2, batch_size, dropout1, dropout2,
                             kernel_regularizer])
+    return cs
 
-    test_hoist(cs, 0, scale_mth=6)
-    test_hoist(cs, 1, scale_mth=6)
-    test_hoist(cs, 2, scale_mth=6)
-    test_hoist(cs, 3, scale_mth=6)
-    test_hoist(cs, 4, scale_mth=6)
+
+if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+    cs = create_configspace()
+    test_mfse(cs, 0)
