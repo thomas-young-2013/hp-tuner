@@ -103,7 +103,7 @@ def train(epochs_num, params, logger=None):
         saver = tf.train.Saver()
 
     config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
+    #config.gpu_options.allow_growth = True
     early_stop = False
     with tf.Session(graph=graph, config=config) as sess:
 

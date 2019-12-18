@@ -169,7 +169,6 @@ class MFSE(BaseFacade):
         conf_cnt = 0
         next_configs = []
         total_cnt = 0
-        self.logger.info(self.weighted_surrogate.surrogate_weight)
         while conf_cnt < num_config and total_cnt < 2 * num_config:
             # in Bayesian optimization, eliminate epsilon sampling.
             incumbent = dict()
@@ -207,6 +206,35 @@ class MFSE(BaseFacade):
         loss = np.sum(np.log(1 + np.exp(-diff)) * y_mask) / length
         return loss
 
+    # Ordered pair (divide-and-conquer)
+    def _ordered_pair(self, y_pred, y_true):
+        length = len(y_pred)
+        sorted_idx = np.argsort(y_true)
+        sorted_pred = [y_pred[i] for i in sorted_idx]
+
+        def inverted_pair(lst):
+            if len(lst) == 1:
+                return lst, 0
+            else:
+                n = len(lst) // 2
+                lst1, count1 = inverted_pair(lst[0:n])
+                lst2, count2 = inverted_pair(lst[n:len(lst)])
+                i = j = cnt = 0
+                res = []
+                while i < len(lst1) and j < len(lst2):
+                    if lst1[i] <= lst2[j]:
+                        res.append(lst1[i])
+                        i += 1
+                    else:
+                        res.append(lst2[j])
+                        cnt += len(lst1) - i
+                        j += 1
+                res += lst1[i:]
+                res += lst2[j:]
+                return lst, count1 + count2 + cnt
+
+        return int(length * (length - 1) / 2 - inverted_pair(sorted_pred)[1])
+
     def update_weight_vector(self):
         max_r = self.iterate_r[-1]
         incumbent_configs = self.target_x[max_r]
@@ -223,6 +251,7 @@ class MFSE(BaseFacade):
         mean_list = []
         var_list = []
         loss_list = []
+        order_weight = []
         for i, r in enumerate(r_list):
             mean, var = self.weighted_surrogate.surrogate_container[r].predict(test_x)
             tmp_y = np.reshape(mean, -1)
@@ -230,6 +259,11 @@ class MFSE(BaseFacade):
             mean_list.append(tmp_y)
             var_list.append(tmp_var)
             loss_list.append(self._calculate_loss(tmp_y, test_y))
+            order_weight.append(self._ordered_pair(tmp_y, test_y))
+
+        order_weight = np.array(order_weight)
+        order_weight = np.exp(order_weight) / sum(np.exp(order_weight))  # Softmax
+        self.logger.info(order_weight)
         means = np.array(mean_list)
         vars = np.array(var_list) + 1e-8
 
@@ -247,12 +281,12 @@ class MFSE(BaseFacade):
             res = minimize(min_func, curr_list, constraints=constraints)
 
         updated_weights = list()
-        min_surrogate_id = np.argmin(loss_list)
+        max_surrogate_id = np.argmax(order_weight)
         for i, r in enumerate(r_list):
             if not self.multi_surrogate:
-                self.weighted_surrogate.surrogate_weight[r] = 1.0 if i == min_surrogate_id else 0
+                self.weighted_surrogate.surrogate_weight[r] = 1.0 if i == max_surrogate_id else 0
             else:
-                self.weighted_surrogate.surrogate_weight[r] = res.x[i]
+                self.weighted_surrogate.surrogate_weight[r] = order_weight[i]
             updated_weights.append(self.weighted_surrogate.surrogate_weight[r])
             self.logger.info('update surrogate weight:%d-%.4f' % (r, self.weighted_surrogate.surrogate_weight[r]))
         self.hist_weights.append(updated_weights)

@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['local', 'server'], default='local')
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=9)
-parser.add_argument('--iter', type=int, default=500)
+parser.add_argument('--iter', type=int, default=10000)
 parser.add_argument('--iter_c', type=int, default=5)
 
 args = parser.parse_args()
@@ -63,6 +63,7 @@ def test_hb(cs, id):
 def test_bohb(cs, id):
     bohb = BOHB(cs, train, maximal_iter, num_iter=iter_num, p=0.2, n_workers=n_work)
     bohb.method_name = "BOHB-fcnet-%d" % id
+    bohb.runtime_limit = 19000
     bohb.run()
     bohb.plot_statistics(method="BOHB-fcnet-%d" % id)
     print(bohb.get_incumbent(5))
@@ -81,7 +82,7 @@ def test_hoist(cs, id, scale_mth=1):
                  scale_method=scale_mth, init_weight=weight)
     method_name = "HOIST-fcnet-%d-%d" % (scale_mth, id)
     hoist.method_name = method_name
-    hoist.runtime_limit = 18000
+    hoist.runtime_limit = 19000
     hoist.run()
 
     hoist.plot_statistics(method=method_name)
@@ -92,10 +93,37 @@ def test_hoist(cs, id, scale_mth=1):
 
 
 def test_mfse(cs, id):
-    init_weight = [0.2, 0.1, 0.7]
     model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
-                 update_enable=True, init_weight=init_weight)
+                 update_enable=True)
     method_name = "MFSE_fcnet-%d" % id
+    model.method_name = method_name
+    model.runtime_limit = 19000
+    model.restart_needed = True
+    model.run()
+    print(model.get_incumbent(5))
+    weights = model.get_weights()
+    np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
+    return model.get_incumbent(5)
+
+
+def test_mfse_average(cs, id):
+    model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
+                 update_enable=False)
+    method_name = "MFSE_AVERAGE_fcnet-%d" % id
+    model.method_name = method_name
+    model.runtime_limit = 19000
+    model.restart_needed = True
+    model.run()
+    print(model.get_incumbent(5))
+    weights = model.get_weights()
+    np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
+    return model.get_incumbent(5)
+
+
+def test_mfse_single(cs, id):
+    model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
+                 update_enable=True, multi_surrogate=False)
+    method_name = "MFSE_SINGLE_fcnet-%d" % id
     model.method_name = method_name
     model.runtime_limit = 19000
     model.restart_needed = True
@@ -166,7 +194,12 @@ def create_configspace():
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     cs = create_configspace()
-    test_mfse(cs, 0)
+    # test_hb(cs, 1)
+    # test_bohb(cs, 2)
+    # test_vanilla_bo(cs, 3)
+    # test_boes(cs, 4)
+    test_mfse_average(cs, 5)
+    test_mfse_single(cs, 6)

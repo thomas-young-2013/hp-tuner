@@ -6,8 +6,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['local', 'server'], default='local')
 parser.add_argument('--R', type=int, default=27)
 parser.add_argument('--n', type=int, default=6)
-parser.add_argument('--iter', type=int, default=500)
-parser.add_argument('--runtime_limit', type=int, default=21600)
+parser.add_argument('--iter', type=int, default=20000)
+parser.add_argument('--runtime_limit', type=int, default=27000)
 
 args = parser.parse_args()
 
@@ -22,6 +22,7 @@ from hoist.config_space import ConfigurationSpace, sample_configurations
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformIntegerHyperparameter
 from hoist.evaluate_function.eval_xgb import train
 from hoist.facade.bohb import BOHB
+from hoist.facade.bo_es import SMAC_ES
 from hoist.facade.hb import Hyperband
 from hoist.facade.hoist import XFHB
 from hoist.facade.mfse import MFSE
@@ -43,7 +44,7 @@ def train_xgb(cs):
 
 
 def test_batch_bo(cs, id):
-    model = SMAC(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work)
+    model = SMAC(cs, train, maximal_iter, num_iter=iter_num, n_workers=1)
     model.method_name = "BO-xgb-%d" % id
     model.runtime_limit = runtime_limit
     model.restart_needed = True
@@ -86,6 +87,15 @@ def test_bohb(cs, id):
     print(result)
     return result
 
+def test_boes(cs, id):
+    method_name = "BOES-xgb-%d" % id
+    mbhb = SMAC_ES(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work)
+    mbhb.set_method_name(method_name)
+    mbhb.runtime_limit = 19000
+    mbhb.run()
+    mbhb.plot_statistics(method=method_name)
+    print(mbhb.get_incumbent(5))
+    return mbhb.get_incumbent(5)
 
 def test_hoist(cs, id, scale_mth=6):
     if scale_mth <= 6:
@@ -100,7 +110,7 @@ def test_hoist(cs, id, scale_mth=6):
 
     method_name = "HOIST-xgb-%d-%d" % (scale_mth, id)
     model.method_name = method_name
-    model.runtime_limit = 27000
+    model.runtime_limit = runtime_limit
     model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
@@ -114,7 +124,7 @@ def test_mfse_average(cs, id):
                  update_enable=False)
     method_name = "MFSE_AVERAGE-xgb-%d" % id
     model.method_name = method_name
-    model.runtime_limit = 27000
+    model.runtime_limit = runtime_limit
     model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
@@ -124,12 +134,11 @@ def test_mfse_average(cs, id):
 
 
 def test_mfse_single(cs, id):
-    init_weight = [1, 0, 0, 0, 0]
     model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
-                 update_enable=True, multi_surrogate=False, init_weight=init_weight)
+                 update_enable=True, multi_surrogate=False)
     method_name = "MFSE_SINGLE-xgb-%d" % id
     model.method_name = method_name
-    model.runtime_limit = 27000
+    model.runtime_limit = runtime_limit
     model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
@@ -137,18 +146,20 @@ def test_mfse_single(cs, id):
     np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
     return model.get_incumbent(5)
 
+
 def test_mfse(cs, id):
     model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
                  update_enable=True)
     method_name = "MFSE_xgb-%d" % id
     model.method_name = method_name
-    model.runtime_limit = 27000
+    model.runtime_limit = runtime_limit
     model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
     weights = model.get_weights()
     np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
     return model.get_incumbent(5)
+
 
 def create_configspace():
     cs = ConfigurationSpace()
@@ -172,10 +183,9 @@ if __name__ == "__main__":
 
     # Test the objective function.
     # train_xgb(cs)
-    # test_vanilla_bo(cs, 1)
-    # test_batch_bo(cs, 1)
-    # test_hb(cs, 1)
-    # test_bohb(cs, 1)
-    # test_old_hoist(cs, 1)
-    # test_hoist_average(cs, 0)
-    test_mfse(cs, 0)
+    test_hb(cs, 1)
+    test_bohb(cs, 2)
+    test_vanilla_bo(cs, 3)
+    test_boes(cs, 4)
+    test_mfse_average(cs, 5)
+    test_mfse_single(cs, 6)
