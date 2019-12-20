@@ -193,18 +193,18 @@ class MFSE(BaseFacade):
         return next_configs
 
     # mean ranking loss
-    def _calculate_loss(self, y_pred, y_true):
-        length = len(y_pred)
-        y_pred = np.reshape(y_pred, -1)
-        y_pred1 = np.tile(y_pred, (length, 1))
-        y_pred2 = np.transpose(y_pred1)
-        diff = y_pred1 - y_pred2
-        y_true = np.reshape(y_true, -1)
-        y_true1 = np.tile(y_true, (length, 1))
-        y_true2 = np.transpose(y_true1)
-        y_mask = (y_true1 - y_true2 > 0) + 0
-        loss = np.sum(np.log(1 + np.exp(-diff)) * y_mask) / length
-        return loss
+    # def _calculate_loss(self, y_pred, y_true):
+    #     length = len(y_pred)
+    #     y_pred = np.reshape(y_pred, -1)
+    #     y_pred1 = np.tile(y_pred, (length, 1))
+    #     y_pred2 = np.transpose(y_pred1)
+    #     diff = y_pred1 - y_pred2
+    #     y_true = np.reshape(y_true, -1)
+    #     y_true1 = np.tile(y_true, (length, 1))
+    #     y_true2 = np.transpose(y_true1)
+    #     y_mask = (y_true1 - y_true2 > 0) + 0
+    #     loss = np.sum(np.log(1 + np.exp(-diff)) * y_mask) / length
+    #     return loss
 
     # Ordered pair (divide-and-conquer)
     def _ordered_pair(self, y_pred, y_true):
@@ -245,40 +245,39 @@ class MFSE(BaseFacade):
         # Get previous weights
         r_list = self.weighted_surrogate.surrogate_r
         cur_confidence = self.weighted_surrogate.surrogate_weight
-        curr_list = np.array([cur_confidence[r] for r in r_list])
 
         # Get means and vars
         mean_list = []
-        var_list = []
-        loss_list = []
+        # var_list = []
+        # loss_list = []
         order_weight = []
         for i, r in enumerate(r_list):
             mean, var = self.weighted_surrogate.surrogate_container[r].predict(test_x)
             tmp_y = np.reshape(mean, -1)
-            tmp_var = np.reshape(var, -1)
+            # tmp_var = np.reshape(var, -1)
             mean_list.append(tmp_y)
-            var_list.append(tmp_var)
-            loss_list.append(self._calculate_loss(tmp_y, test_y))
+            # var_list.append(tmp_var)
+            # loss_list.append(self._calculate_loss(tmp_y, test_y))
             order_weight.append(self._ordered_pair(tmp_y, test_y))
 
         order_weight = np.array(order_weight)
         order_weight = np.exp(order_weight) / sum(np.exp(order_weight))  # Softmax
         self.logger.info(order_weight)
-        means = np.array(mean_list)
-        vars = np.array(var_list) + 1e-8
+        # means = np.array(mean_list)
+        # vars = np.array(var_list) + 1e-8
 
-        if self.multi_surrogate:
-            def min_func(x):
-                x = np.reshape(np.array(x), (1, len(x)))
-                ensemble_vars = 1 / (x @ (1 / vars))
-                ensemble_means = x @ (means / vars) * ensemble_vars
-                ensemble_means = np.reshape(ensemble_means, -1)
-                return self._calculate_loss(ensemble_means, test_y)
-
-            constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
-                           {'type': 'ineq', 'fun': lambda x: x - 0},
-                           {'type': 'ineq', 'fun': lambda x: 1 - x}]
-            res = minimize(min_func, curr_list, constraints=constraints)
+        # if self.multi_surrogate:
+        #     def min_func(x):
+        #         x = np.reshape(np.array(x), (1, len(x)))
+        #         ensemble_vars = 1 / (x @ (1 / vars))
+        #         ensemble_means = x @ (means / vars) * ensemble_vars
+        #         ensemble_means = np.reshape(ensemble_means, -1)
+        #         return self._calculate_loss(ensemble_means, test_y)
+        #
+        #     constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
+        #                    {'type': 'ineq', 'fun': lambda x: x - 0},
+        #                    {'type': 'ineq', 'fun': lambda x: 1 - x}]
+        #     res = minimize(min_func, curr_list, constraints=constraints)
 
         updated_weights = list()
         max_surrogate_id = np.argmax(order_weight)
