@@ -7,8 +7,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['local', 'server'], default='local')
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=9)
-parser.add_argument('--iter', type=int, default=10000)
+parser.add_argument('--iter', type=int, default=20000)
 parser.add_argument('--iter_c', type=int, default=5)
+parser.add_argument('--runtime_limit', type=int, default=7200)
 
 args = parser.parse_args()
 
@@ -32,6 +33,7 @@ from hoist.facade.mfse import MFSE
 iter_num = args.iter
 maximal_iter = args.R
 n_work = args.n
+runtime_limit = args.runtime_limit
 print('training params: R-%d | iter-%d | workers-%d' % (maximal_iter, iter_num, n_work))
 
 
@@ -43,6 +45,9 @@ def train_fcnet(cs):
 
 def test_bo(cs, id):
     bo = SMAC(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work)
+    bo.runtime_limit = runtime_limit
+    method_name = "BO-fcnet-%d" % id
+    bo.set_method_name(method_name)
     bo.run()
     bo.plot_statistics(method="BO-fcnet-%d" % id)
     result = bo.get_incumbent(5)
@@ -52,7 +57,7 @@ def test_bo(cs, id):
 
 def test_hb(cs, id):
     hyperband = Hyperband(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work)
-    hyperband.runtime_limit = 19000
+    hyperband.runtime_limit = runtime_limit
     method_name = "HB-fcnet-%d" % id
     hyperband.set_method_name(method_name)
     hyperband.run()
@@ -63,7 +68,7 @@ def test_hb(cs, id):
 def test_bohb(cs, id):
     bohb = BOHB(cs, train, maximal_iter, num_iter=iter_num, p=0.2, n_workers=n_work)
     bohb.method_name = "BOHB-fcnet-%d" % id
-    bohb.runtime_limit = 19000
+    bohb.runtime_limit = runtime_limit
     bohb.run()
     bohb.plot_statistics(method="BOHB-fcnet-%d" % id)
     print(bohb.get_incumbent(5))
@@ -82,7 +87,7 @@ def test_hoist(cs, id, scale_mth=1):
                  scale_method=scale_mth, init_weight=weight)
     method_name = "HOIST-fcnet-%d-%d" % (scale_mth, id)
     hoist.method_name = method_name
-    hoist.runtime_limit = 19000
+    hoist.runtime_limit = runtime_limit
     hoist.run()
 
     hoist.plot_statistics(method=method_name)
@@ -97,7 +102,7 @@ def test_mfse(cs, id):
                  update_enable=True)
     method_name = "MFSE_fcnet-%d" % id
     model.method_name = method_name
-    model.runtime_limit = 19000
+    model.runtime_limit = runtime_limit
     model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
@@ -111,7 +116,7 @@ def test_mfse_average(cs, id):
                  update_enable=False)
     method_name = "MFSE_AVERAGE_fcnet-%d" % id
     model.method_name = method_name
-    model.runtime_limit = 19000
+    model.runtime_limit = runtime_limit
     model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
@@ -125,7 +130,7 @@ def test_mfse_single(cs, id):
                  update_enable=True, multi_surrogate=False)
     method_name = "MFSE_SINGLE_fcnet-%d" % id
     model.method_name = method_name
-    model.runtime_limit = 19000
+    model.runtime_limit = runtime_limit
     model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
@@ -137,7 +142,7 @@ def test_mfse_single(cs, id):
 def test_mbhb(cs, id):
     method_name = "MBHB-fcnet-%d" % id
     mbhb = MBHB(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work)
-    mbhb.runtime_limit = 19000
+    mbhb.runtime_limit = runtime_limit
     mbhb.set_method_name(method_name)
     mbhb.run()
     print(mbhb.get_incumbent(5))
@@ -148,7 +153,7 @@ def test_boes(cs, id):
     method_name = "BOES-fcnet-%d" % id
     mbhb = SMAC_ES(cs, train, maximal_iter, num_iter=iter_num, n_workers=1)
     mbhb.set_method_name(method_name)
-    mbhb.runtime_limit = 19000
+    mbhb.runtime_limit = runtime_limit
     mbhb.run()
     mbhb.plot_statistics(method=method_name)
     print(mbhb.get_incumbent(5))
@@ -159,7 +164,7 @@ def test_vanilla_bo(cs, n_id):
     bo = SMAC(cs, train, maximal_iter, num_iter=iter_num, n_workers=1)
     method_name = "Vanilla-BO-fcnet-%d" % n_id
     bo.set_method_name(method_name)
-    bo.runtime_limit = 19000
+    bo.runtime_limit = runtime_limit
     bo.run()
     result = bo.get_incumbent(5)
     print(result)
@@ -170,6 +175,7 @@ def test_baseline_iid(cs, id):
     method_name = "BOSNG-fcnet-%d" % id
     mbhb = BaseIID(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work)
     mbhb.set_method_name(method_name)
+    mbhb.runtime_limit = runtime_limit
     mbhb.run()
     mbhb.plot_statistics(method=method_name)
     print(mbhb.get_incumbent(5))
@@ -201,5 +207,23 @@ if __name__ == "__main__":
     # test_bohb(cs, 2)
     # test_vanilla_bo(cs, 3)
     # test_boes(cs, 4)
-    test_mfse_average(cs, 5)
-    test_mfse_single(cs, 6)
+    test_bohb(cs, 11)
+    test_bohb(cs, 12)
+    test_bohb(cs, 13)
+    test_bohb(cs, 14)
+    test_bohb(cs, 15)
+    test_mfse_single(cs, 21)
+    test_mfse_single(cs, 22)
+    test_mfse_single(cs, 23)
+    test_mfse_single(cs, 24)
+    test_mfse_single(cs, 25)
+    test_mfse_average(cs, 31)
+    test_mfse_average(cs, 32)
+    test_mfse_average(cs, 33)
+    test_mfse_average(cs, 34)
+    test_mfse_average(cs, 35)
+    test_mfse(cs, 41)
+    test_mfse(cs, 42)
+    test_mfse(cs, 43)
+    test_mfse(cs, 44)
+    test_mfse(cs, 45)

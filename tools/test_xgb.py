@@ -91,7 +91,7 @@ def test_boes(cs, id):
     method_name = "BOES-xgb-%d" % id
     mbhb = SMAC_ES(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work)
     mbhb.set_method_name(method_name)
-    mbhb.runtime_limit = 19000
+    mbhb.runtime_limit = runtime_limit
     mbhb.run()
     mbhb.plot_statistics(method=method_name)
     print(mbhb.get_incumbent(5))
