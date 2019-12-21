@@ -197,42 +197,19 @@ class BaseFacade(object):
             os.remove(os.path.join(data_dir, f))
         assert (len(os.listdir(data_dir)) == 0)
 
-    # @DeprecationWarning
-    def plot_statistics(self, method="MTH", only_plot=False, fig=True):
-        file_name = '%s_%d' % (method, self.num_workers)
-        stage_file_name = 'stage_%s_%d' % (method, self.num_workers)
-        if not only_plot:
-            x = np.array(self._history['time_elapsed'])
-            y = np.array(self._history['performance'])
-            stage_x = np.array(self.stage_history['stage_id'])
-            stage_y = np.array(self.stage_history['performance'])
-            np.save('data/%s' % file_name, np.array([x, y]))
-            np.save('data/%s' % stage_file_name, np.array([stage_x, stage_y]))
-        else:
-            x, y = np.load('data/%s.npy' % file_name)
-
-        if fig:
-            plt.plot(x, y)
-            plt.xlabel('time_elapsed (s)')
-            plt.ylabel('loss (mnist, test)')
-            # plt.show()
-            plt.savefig("data/%s.png" % file_name)
-
     def save_intemediate_statistics(self, save_stage=False):
-        method = self.method_name
-        file_name = '%s_%d' % (method, self.num_workers)
+        file_name = '%s.npy' % self.method_name
         x = np.array(self._history['time_elapsed'])
         y = np.array(self._history['performance'])
         np.save('data/%s' % file_name, np.array([x, y]))
 
         if save_stage:
-            stage_file_name = 'stage_%s_%d' % (method, self.num_workers)
+            stage_file_name = 'stage_%s.npy' % self.method_name
             stage_x = np.array(self.stage_history['stage_id'])
             stage_y = np.array(self.stage_history['performance'])
             np.save('data/%s' % stage_file_name, np.array([stage_x, stage_y]))
 
         plt.plot(x, y)
-        plt.xlabel('time_elapsed (s)')
-        plt.ylabel('validation error')
-        # plt.show()
-        plt.savefig("data/%s.png" % file_name)
+        plt.xlabel('Time elapsed (sec)')
+        plt.ylabel('Validation error')
+        plt.savefig("data/%s.png" % self.method_name)

@@ -20,7 +20,7 @@ from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformInteg
 from mfes.evaluate_function.eval_fcnet_tf import train
 from mfes.facade.bohb import BOHB
 from mfes.facade.hb import Hyperband
-from mfes.facade.hoist import XFHB
+from mfes.facade.mbhb import MBHB
 from mfes.facade.batch_bo import SMAC
 from mfes.facade.baseline_iid import BaseIID
 from mfes.facade.mfse import MFSE
@@ -70,35 +70,12 @@ def test_bohb(cs, id):
     return bohb.get_incumbent(5)
 
 
-def test_hoist(cs, id, scale_mth=1):
-    if scale_mth <= 6:
-        weight = [0.2] * 5
-    elif scale_mth == 7:
-        weight = [0.0625, 0.125, 0.25, 0.5, 1.0]
-    else:
-        weight = None
-    hoist = XFHB(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
-                 update_enable=True, rho_delta=0.1, enable_rho=True,
-                 scale_method=scale_mth, init_weight=weight)
-    method_name = "HOIST-fcnet-%d-%d" % (scale_mth, id)
-    hoist.method_name = method_name
-    hoist.runtime_limit = runtime_limit
-    hoist.run()
-
-    hoist.plot_statistics(method=method_name)
-    print(hoist.get_incumbent(5))
-    weights = hoist.get_weights()
-    np.save('data/weights_%s.npy' % method_name, np.asarray(weights))
-    return hoist.get_incumbent(5)
-
-
 def test_mfse(cs, id):
     model = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_work,
                  update_enable=True)
     method_name = "MFSE_fcnet-%d" % id
     model.method_name = method_name
     model.runtime_limit = runtime_limit
-    model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
     weights = model.get_weights()
@@ -112,7 +89,6 @@ def test_mfse_average(cs, id):
     method_name = "MFSE_AVERAGE_fcnet-%d" % id
     model.method_name = method_name
     model.runtime_limit = runtime_limit
-    model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
     weights = model.get_weights()
@@ -126,7 +102,6 @@ def test_mfse_single(cs, id):
     method_name = "MFSE_SINGLE_fcnet-%d" % id
     model.method_name = method_name
     model.runtime_limit = runtime_limit
-    model.restart_needed = True
     model.run()
     print(model.get_incumbent(5))
     weights = model.get_weights()

@@ -15,7 +15,7 @@ from mfes.config_space import convert_configurations_to_array, sample_configurat
 class MFSE(BaseFacade):
 
     def __init__(self, config_space: ConfigurationSpace, objective_func, R,
-                 num_iter=10, eta=3, p=0.5, n_workers=1, random_state=1,
+                 num_iter=10000, eta=3, p=0.5, n_workers=1, random_state=1,
                  init_weight=None, update_enable=True,
                  multi_surrogate=True, fusion_method='gpoe'):
         BaseFacade.__init__(self, objective_func, n_workers=n_workers)
