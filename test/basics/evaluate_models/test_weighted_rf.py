@@ -1,11 +1,15 @@
+import os
+import sys
 import numpy as np
+sys.path.append(os.getcwd())
+
 from mfes.config_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, \
     UniformFloatHyperparameter, UniformIntegerHyperparameter
-from ConfigSpace.conditions import InCondition
 from pyrfr import regression
 
 from mfes.model.rf_with_instances import RandomForestWithInstances
+from mfes.model.weighted_rf_ensemble import WeightedRandomForestCluster
 from mfes.utils.util_funcs import get_types
 
 if __name__ == "__main__":
@@ -23,12 +27,10 @@ if __name__ == "__main__":
     cs.add_hyperparameter(batch_size)
 
     types, bounds = get_types(cs)
-    reg = regression.binary_rss_forest()
-    rf_opts = regression.forest_opts()
-    rf_opts.num_trees = 10
-    rf_opts.do_bootstrapping = True
+    s_max = 4
+    eta = 3
+    model = WeightedRandomForestCluster(types, bounds, s_max, eta, 0.4)
 
-    model = RandomForestWithInstances(types=types, bounds=bounds)
     x = np.array([[0.78105907, 0.33860037, 0.72826097, 0.02941158],
                   [0.81160897, 0.63147998, 0.72826097, 0.04901943],
                   [0.27800406, 0.36616871, 0.16304333, 0.24509794],
@@ -38,14 +40,11 @@ if __name__ == "__main__":
                   [0.53665988, 0.68576624, 0.81521753, 0.06862728],
                   [0.72199594, 0.18900731, 0.75000011, 0.36274504]], dtype=np.float64)
     y = np.array([0.544481, 2.34456, 0.654629, 0.576376, 0.603501, 0.506214, 0.416664, 0.483639])
-    print(x.dtype)
-    rf_opts.num_data_points_per_tree = x.shape[0]
-    reg.options = rf_opts
-    model.train(x, y)
+
+    for i in [1, 3, 9, 27, 81]:
+        model.train(x, y, r=i)
     print(model.predict(x))
-    # data = regression.default_data_container(x.shape[1])
-    # for row_X, row_y in zip(x, y):
-    #     data.add_data_point(row_X, row_y)
-    # reg.fit(data, rng=regression.default_random_engine(123))
-    #
-    # print(reg.predict_mean_var(np.array([0.27800406, 0.36616871, 0.16304333, 0.24509794])))
+
+    m = RandomForestWithInstances(types=types, bounds=bounds)
+    m.train(x, y)
+    print(m.predict(x))

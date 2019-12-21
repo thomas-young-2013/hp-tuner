@@ -1,20 +1,13 @@
+import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-
-if sys.argv[1] == 'help':
-    print('command format: [0:desktop, 1:server] [max iteration] [iteration num] [worker num]')
-    exit(0)
-
-if int(sys.argv[1]) == 0:
-    sys.path.append('/home/thomas/Desktop/codes/hp-tuner')
-else:
-    sys.path.append('/home/daim/thomas/hp-tuner')
+sys.path.append(os.getcwd())
 
 from mfes.evaluate_function.eval_lenet_tf import train
 from mfes.utils.runner import Runner
 
-data_file = '/home/thomas/Desktop/tmp/exp_data.npy'
+data_file = 'data/exp_data.npy'
 
 
 def collect(x1_bound, x2_bound, gap, iter_num=10, train_needed=False, n_worker=10):

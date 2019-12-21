@@ -1,5 +1,7 @@
-import random
-import numpy as np
+import os
+import sys
+sys.path.append(os.getcwd())
+
 # Import ConfigSpace and different types of parameters
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, \
     UniformIntegerHyperparameter, UniformFloatHyperparameter
@@ -218,9 +220,7 @@ def test_log_parameter():
 
 
 if __name__ == "__main__":
-    pass
     # test_uniform_log_parameter()
-    # test_create_hyperspace()
+    test_create_hyperspace()
     # test_sample_configurations()
     # test_log_parameter()
-

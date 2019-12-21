@@ -1,26 +1,20 @@
-import numpy as np
-import matplotlib.pyplot as plt
+import os
+import sys
 import seaborn
 import argparse
-import sys
+import numpy as np
+import matplotlib.pyplot as plt
+sys.path.append(os.getcwd())
+from mfes.model.lcnet import LC_ES
+seaborn.set_style(style='whitegrid')
+plt.rc('text', usetex=True)
+plt.rc('font', size=15.0, family='serif')
+plt.rcParams['figure.figsize'] = (10.0, 8.0)
+plt.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['local', 'server'], default='local')
 args = parser.parse_args()
-
-if args.mode == 'local':
-    sys.path.append('/home/thomas/Desktop/codes/hp-tuner')
-else:
-    sys.path.append('/home/daim/thomas/hp-tuner')
-
-from mfes.model.lcnet import LC_ES
-
-seaborn.set_style(style='whitegrid')
-
-plt.rc('text', usetex=True)
-plt.rc('font', size=15.0, family='serif')
-plt.rcParams['figure.figsize'] = (10.0, 8.0)
-plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 
 
 def toy_example(t, a, b):
