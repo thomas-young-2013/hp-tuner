@@ -37,10 +37,6 @@ class MFSE(BaseFacade):
         self.logger.info("Initial weight is: %s" % init_weight[:self.s_max + 1])
         types, bounds = get_types(config_space)
         self.num_config = len(bounds)
-        self.surrogate = RandomForestWithInstances(types=types, bounds=bounds)
-        self.acquisition_func = EI(model=self.surrogate)
-        self.acq_optimizer = RandomSampling(self.acquisition_func, config_space,
-                                            n_samples=max(500, 50 * self.num_config))
 
         self.weighted_surrogate = WeightedRandomForestCluster(
             types, bounds, self.s_max, self.eta, init_weight, 'lc'
@@ -52,14 +48,11 @@ class MFSE(BaseFacade):
         self.incumbent_configs = []
         self.incumbent_perfs = []
 
-        # Optional.
-        self.init_tradeoff = 0.5
-        self.tradeoff_dec_rate = 0.8
-
         self.iterate_id = 0
         self.iterate_r = []
         self.hist_weights = list()
 
+        # Saving evaluation statistics in Hyperband.
         self.target_x = dict()
         self.target_y = dict()
         for index, item in enumerate(np.logspace(0, self.s_max, self.s_max + 1, base=self.eta)):
