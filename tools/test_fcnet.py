@@ -228,6 +228,10 @@ if __name__ == "__main__":
     # test_mfse(cs, 43)
     # test_mfse(cs, 44)
     # test_mfse(cs, 45)
-
-    test_mfse(cs, 101)
-    #test_mfse_single(cs, 102)
+    test_mfse(cs, 51)
+    test_mfse(cs, 52)
+    test_mfse(cs, 53)
+    test_mfse(cs, 54)
+    test_mfse(cs, 55)
+    # test_mfse(cs, 101)
+    # test_mfse_single(cs, 102)

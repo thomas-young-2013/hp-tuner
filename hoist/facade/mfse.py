@@ -260,7 +260,7 @@ class MFSE(BaseFacade):
             # loss_list.append(self._calculate_loss(tmp_y, test_y))
             order_weight.append(self._ordered_pair(tmp_y, test_y))
 
-        order_weight = np.array(order_weight)
+        order_weight = np.array(np.sqrt(order_weight)) # Square root of ordered pair
         trans_order_weight = order_weight - np.max(order_weight)
         order_weight = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))  # Softmax
         self.logger.info(order_weight)
