@@ -1,6 +1,9 @@
-import numpy as np
-import random
 import time
+import random
+import numpy as np
+from math import log, ceil
+
+from mfes.config_space import ConfigurationSpace
 from mfes.model.rf_with_instances import RandomForestWithInstances
 from mfes.utils.util_funcs import get_types
 from mfes.acquisition_function.acquisition import EI
@@ -8,15 +11,19 @@ from mfes.optimizer.random_sampling import RandomSampling
 from mfes.config_space import convert_configurations_to_array, sample_configurations
 from mfes.config_space.util import expand_configurations
 from mfes.facade.base_facade import BaseFacade
-from math import log, ceil
 
 
 class BOHB(BaseFacade):
+    """ The implementation of BOHB.
+        The paper can be found in https://arxiv.org/abs/1807.01774 .
+    """
 
-    def __init__(self, config_space, objective_func, R,
-                 num_iter=10, eta=3, p=0.5, n_workers=1):
+    def __init__(self, config_space: ConfigurationSpace, objective_func, R,
+                 num_iter=10, eta=3, p=0.3, n_workers=1, random_state=1):
         BaseFacade.__init__(self, objective_func, n_workers=n_workers)
         self.config_space = config_space
+        self.seed = random_state
+        self.config_space.seed(self.seed)
         self.p = p
         self.R = R
         self.eta = eta
@@ -24,12 +31,11 @@ class BOHB(BaseFacade):
         self.s_max = int(self.logeta(self.R))
         self.B = (self.s_max + 1) * self.R
         self.num_iter = num_iter
-
+        
         types, bounds = get_types(config_space)
         self.num_config = len(bounds)
         self.surrogate = RandomForestWithInstances(types=types, bounds=bounds)
         self.acquisition_func = EI(model=self.surrogate)
-        # TODO: add SMAC's optimization algorithm.
         self.acq_optimizer = RandomSampling(self.acquisition_func, config_space, n_samples=max(500, 50*self.num_config))
 
         self.incumbent_configs = []
@@ -38,21 +44,18 @@ class BOHB(BaseFacade):
     def iterate(self, skip_last=0):
 
         for s in reversed(range(self.s_max + 1)):
-
-            # initial number of configurations
+            # Set initial number of configurations
             n = int(ceil(self.B / self.R / (s + 1) * self.eta ** s))
-
-            # initial number of iterations per config
+            # Set initial number of iterations per config
             r = self.R * self.eta ** (-s)
-
-            # n random configurations
+            
+            # Sample n configurations according to BOHB strategy.
             T = self.choose_next(n)
             extra_info = None
             last_run_num = None
             for i in range((s + 1) - int(skip_last)): # changed from s + 1
-
                 # Run each of the n configs for <iterations>
-                # and keep best (n_configs / eta) configurations
+                # and keep best (n_configs / eta) configurations.
 
                 n_configs = n * self.eta ** (-i)
                 n_iterations = r * self.eta ** (i)
@@ -71,8 +74,9 @@ class BOHB(BaseFacade):
                 if int(n_iterations) == self.R:
                     self.incumbent_configs.extend(T)
                     self.incumbent_obj.extend(val_losses)
-                # select a number of best configurations for the next loop
-                # filter out early stops, if any
+                
+                # Select a number of best configurations for the next loop.
+                # Filter out early stops, if any.
                 indices = np.argsort(val_losses)
                 if len(T) == sum(early_stops):
                     break
@@ -99,29 +103,27 @@ class BOHB(BaseFacade):
                 start_time = time.time()
                 self.iterate()
                 time_elapsed = (time.time() - start_time)/60
-                self.logger.info("iteration took %.2f min." % time_elapsed)
+                self.logger.info("Iteration took %.2f min." % time_elapsed)
                 self.save_intemediate_statistics()
         except Exception as e:
             print(e)
             self.logger.error(str(e))
-            # clear the immediate result.
+            # Clean the immediate result.
             self.remove_immediate_model()
 
     def choose_next(self, num_config):
         if len(self.incumbent_obj) < 2 * self.num_config:
             return sample_configurations(self.config_space, num_config)
-
-        # print('choose next starts!')
-        self.logger.info('train feature is: %s' % str(self.incumbent_configs[:5]))
-        self.logger.info('train target is: %s' % str(self.incumbent_obj))
-
+        
+        self.logger.info('Train feature is: %s' % str(self.incumbent_configs[:5]))
+        self.logger.info('Train target is: %s' % str(self.incumbent_obj))
         self.surrogate.train(convert_configurations_to_array(self.incumbent_configs),
                              np.array(self.incumbent_obj, dtype=np.float64))
 
-        conf_cnt = 0
-        total_cnt = 0
-        next_configs = []
-        while conf_cnt < num_config and total_cnt < 5*num_config:
+        config_cnt = 0
+        total_sample_cnt = 0
+        config_candidates = []
+        while config_cnt < num_config and total_sample_cnt < 3 * num_config:
             if random.random() < self.p:
                 rand_config = self.config_space.sample_configuration(1)
             else:
@@ -133,13 +135,13 @@ class BOHB(BaseFacade):
 
                 self.acquisition_func.update(model=self.surrogate, eta=incumbent)
                 rand_config = self.acq_optimizer.maximize(batch_size=1)[0]
-            if rand_config not in next_configs:
-                next_configs.append(rand_config)
-                conf_cnt += 1
-            total_cnt += 1
-        if conf_cnt < num_config:
-            next_configs = expand_configurations(next_configs, self.config_space, num_config)
-        return next_configs
+            if rand_config not in config_candidates:
+                config_candidates.append(rand_config)
+                config_cnt += 1
+            total_sample_cnt += 1
+        if config_cnt < num_config:
+            config_candidates = expand_configurations(config_candidates, self.config_space, num_config)
+        return config_candidates
 
     def get_incumbent(self, num_inc=1):
         assert(len(self.incumbent_obj) == len(self.incumbent_configs))

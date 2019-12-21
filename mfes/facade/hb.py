@@ -1,47 +1,48 @@
-import numpy as np
 import time
-from mfes.facade.base_facade import BaseFacade
-from mfes.config_space import sample_configurations
+import numpy as np
 from math import log, ceil
+from mfes.facade.base_facade import BaseFacade
+from mfes.config_space import ConfigurationSpace
+from mfes.config_space import sample_configurations
 
 
 class Hyperband(BaseFacade):
-
-    def __init__(self, config_space, objective_func, R, num_iter=10, n_workers=1):
+    """ The implementation of Hyperband (HB).
+        The paper can be found in http://www.jmlr.org/papers/volume18/16-558/16-558.pdf .
+    """
+    def __init__(self, config_space: ConfigurationSpace, objective_func, R, 
+                 num_iter=10, eta=3, n_workers=1, random_state=1):
         BaseFacade.__init__(self, objective_func, n_workers=n_workers)
+        self.seed = random_state
         self.configuration_space = config_space
-
+        self.configuration_space.seed(self.seed)
+        
         self.num_iter = num_iter
-        self.max_iter = R  	    # maximum iterations per configuration
-        self.eta = 3			# defines configuration downsampling rate (default = 3)
+        self.max_iter = R  	    # Maximum iterations per configuration
+        self.eta = eta			# Define configuration downsampling rate (default = 3)
         self.logeta = lambda x: log(x) / log(self.eta)
         self.s_max = int(self.logeta(self.max_iter))
         self.B = (self.s_max + 1) * self.max_iter
 
-        self.incumbent_configs = []
-        self.incumbent_obj = []
+        self.incumbent_configs = list()
+        self.incumbent_perfs = list()
 
-    # can be called multiple times
+    # This function can be called multiple times
     def iterate(self, skip_last=0):
-
         for s in reversed(range(self.s_max + 1)):
-
-            # initial number of configurations
+            # Initial number of configurations
             n = int(ceil(self.B / self.max_iter / (s + 1) * self.eta ** s))
-
-            # initial number of iterations per config
+            # Initial number of iterations per config
             r = self.max_iter * self.eta ** (-s)
 
-            # n random configurations
-            # T = self.configuration_space.sample_configuration(n)
+            # Sample n configurations uniformly.
             T = sample_configurations(self.configuration_space, n)
             incumbent_loss = np.inf
             extra_info = None
             last_run_num = None
-            for i in range((s + 1) - int(skip_last)): # changed from s + 1
-
+            for i in range((s + 1) - int(skip_last)):  # Changed from s + 1
                 # Run each of the n configs for <iterations>
-                # and keep best (n_configs / eta) configurations
+                # and keep best (n_configs / eta) configurations.
 
                 n_configs = n * self.eta ** (-i)
                 n_iterations = r * self.eta ** (i)
@@ -75,7 +76,7 @@ class Hyperband(BaseFacade):
                 self.stage_id += 1
             if not np.isnan(incumbent_loss):
                 self.incumbent_configs.append(T[0])
-                self.incumbent_obj.append(incumbent_loss)
+                self.incumbent_perfs.append(incumbent_loss)
             self.remove_immediate_model()
 
     @BaseFacade.process_manage
@@ -87,18 +88,18 @@ class Hyperband(BaseFacade):
                 start_time = time.time()
                 self.iterate(skip_last=skip_last)
                 time_elapsed = (time.time() - start_time)/60
-                self.logger.info("iteration took %.2f min." % time_elapsed)
+                self.logger.info("Iteration took %.2f min." % time_elapsed)
                 self.save_intemediate_statistics()
-            for i, obj in enumerate(self.incumbent_obj):
-                self.logger.info('%dth config: %s, obj: %f' % (i+1, str(self.incumbent_configs[i]), self.incumbent_obj[i]))
+            for i, obj in enumerate(self.incumbent_perfs):
+                self.logger.info('%d-th config: %s, obj: %f.' % (i+1, str(self.incumbent_configs[i]), self.incumbent_perfs[i]))
         except Exception as e:
             print(e)
             self.logger.error(str(e))
-            # clear the immediate result.
+            # Clean the immediate results.
             self.remove_immediate_model()
 
     def get_incumbent(self, num_inc=1):
-        assert(len(self.incumbent_obj) == len(self.incumbent_configs))
-        indices = np.argsort(self.incumbent_obj)
+        assert(len(self.incumbent_perfs) == len(self.incumbent_configs))
+        indices = np.argsort(self.incumbent_perfs)
         return [self.incumbent_configs[i] for i in indices[0:num_inc]], \
-               [self.incumbent_obj[i] for i in indices[0: num_inc]]
+               [self.incumbent_perfs[i] for i in indices[0: num_inc]]
