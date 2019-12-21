@@ -1,15 +1,14 @@
 import time
 import numpy as np
-from mfes.model.rf_with_instances import RandomForestWithInstances
-from mfes.model.weighted_rf_ensemble import WeightedRandomForestCluster
-from mfes.utils.util_funcs import get_types
-from mfes.acquisition_function.acquisition import EI
-from mfes.optimizer.random_sampling import RandomSampling
-from mfes.config_space import convert_configurations_to_array, sample_configurations
-from mfes.facade.base_facade import BaseFacade
-from mfes.config_space.util import expand_configurations
-from mfes.utils.util_funcs import minmax_normalization
 from math import log, ceil
+from mfes.utils.util_funcs import get_types
+from mfes.facade.base_facade import BaseFacade
+from mfes.acquisition_function.acquisition import EI
+from mfes.utils.util_funcs import minmax_normalization
+from mfes.config_space.util import expand_configurations
+from mfes.optimizer.random_sampling import RandomSampling
+from mfes.model.weighted_rf_ensemble import WeightedRandomForestCluster
+from mfes.config_space import convert_configurations_to_array, sample_configurations
 
 
 class MFSE(BaseFacade):
@@ -134,8 +133,6 @@ class MFSE(BaseFacade):
                 normalized_y = minmax_normalization(self.target_y[item])
                 self.weighted_surrogate.train(convert_configurations_to_array(self.target_x[item]),
                                               np.array(normalized_y, dtype=np.float64), r=item)
-        # TODO: trade off value: decay (bayesian optimization did? do we need trade off e&e again?)
-        self.init_tradeoff *= self.tradeoff_dec_rate
 
     @BaseFacade.process_manage
     def run(self):
