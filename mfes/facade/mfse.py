@@ -3,6 +3,7 @@ import numpy as np
 from math import log, ceil
 from mfes.utils.util_funcs import get_types
 from mfes.facade.base_facade import BaseFacade
+from mfes.config_space import ConfigurationSpace
 from mfes.acquisition_function.acquisition import EI
 from mfes.utils.util_funcs import minmax_normalization
 from mfes.config_space.util import expand_configurations
@@ -13,21 +14,24 @@ from mfes.config_space import convert_configurations_to_array, sample_configurat
 
 class MFSE(BaseFacade):
 
-    def __init__(self, config_space, objective_func, R,
-                 num_iter=10, eta=3, p=0.5, n_workers=1, init_weight=None,
-                 update_enable=False, random_mode=True, multi_surrogate=True):
+    def __init__(self, config_space: ConfigurationSpace, objective_func, R,
+                 num_iter=10, eta=3, p=0.5, n_workers=1, random_state=1,
+                 init_weight=None, update_enable=True,
+                 multi_surrogate=True, fusion_method='gpoe'):
         BaseFacade.__init__(self, objective_func, n_workers=n_workers)
         self.config_space = config_space
         self.p = p
         self.R = R
         self.eta = eta
+        self.seed = random_state
         self.logeta = lambda x: log(x) / log(self.eta)
         self.s_max = int(self.logeta(self.R))
         self.B = (self.s_max + 1) * self.R
         self.num_iter = num_iter
         self.update_enable = update_enable
-        self.random_mode = random_mode
+        self.fusion_method = fusion_method
 
+        self.config_space.seed(self.seed)
         self.weight_update_id = 0
         self.multi_surrogate = multi_surrogate
 
@@ -38,7 +42,7 @@ class MFSE(BaseFacade):
         self.num_config = len(bounds)
 
         self.weighted_surrogate = WeightedRandomForestCluster(
-            types, bounds, self.s_max, self.eta, init_weight, 'lc'
+            types, bounds, self.s_max, self.eta, init_weight, self.fusion_method
         )
         self.weighted_acquisition_func = EI(model=self.weighted_surrogate)
         self.weighted_acq_optimizer = RandomSampling(self.weighted_acquisition_func,
