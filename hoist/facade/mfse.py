@@ -261,7 +261,8 @@ class MFSE(BaseFacade):
             order_weight.append(self._ordered_pair(tmp_y, test_y))
 
         order_weight = np.array(order_weight)
-        order_weight = np.exp(order_weight) / sum(np.exp(order_weight))  # Softmax
+        trans_order_weight = order_weight - np.max(order_weight)
+        order_weight = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))  # Softmax
         self.logger.info(order_weight)
         # means = np.array(mean_list)
         # vars = np.array(var_list) + 1e-8
@@ -289,6 +290,8 @@ class MFSE(BaseFacade):
             updated_weights.append(self.weighted_surrogate.surrogate_weight[r])
             self.logger.info('update surrogate weight:%d-%.4f' % (r, self.weighted_surrogate.surrogate_weight[r]))
         self.hist_weights.append(updated_weights)
+        print(self.hist_weights)
+        self.logger.info(self.hist_weights)
         np.save('data/tmp_weights_%s.npy' % self.method_name, np.asarray(self.hist_weights))
 
     def get_incumbent(self, num_inc=1):

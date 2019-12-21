@@ -25,8 +25,8 @@ from hoist.facade.bohb import BOHB
 from hoist.facade.hb import Hyperband
 from hoist.facade.hoist import XFHB
 from hoist.facade.batch_bo import SMAC
-from hoist.facade.mbhb import MBHB
-from hoist.facade.bo_es import SMAC_ES
+# from hoist.facade.mbhb import MBHB
+# from hoist.facade.bo_es import SMAC_ES
 from hoist.facade.baseline_iid import BaseIID
 from hoist.facade.mfse import MFSE
 
@@ -200,30 +200,34 @@ def create_configspace():
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     cs = create_configspace()
     # test_hb(cs, 1)
     # test_bohb(cs, 2)
     # test_vanilla_bo(cs, 3)
     # test_boes(cs, 4)
-    test_bohb(cs, 11)
-    test_bohb(cs, 12)
-    test_bohb(cs, 13)
-    test_bohb(cs, 14)
-    test_bohb(cs, 15)
-    test_mfse_single(cs, 21)
-    test_mfse_single(cs, 22)
-    test_mfse_single(cs, 23)
-    test_mfse_single(cs, 24)
-    test_mfse_single(cs, 25)
-    test_mfse_average(cs, 31)
-    test_mfse_average(cs, 32)
-    test_mfse_average(cs, 33)
-    test_mfse_average(cs, 34)
-    test_mfse_average(cs, 35)
-    test_mfse(cs, 41)
-    test_mfse(cs, 42)
-    test_mfse(cs, 43)
-    test_mfse(cs, 44)
-    test_mfse(cs, 45)
+
+    # test_bohb(cs, 11)
+    # test_bohb(cs, 12)
+    # test_bohb(cs, 13)
+    # test_bohb(cs, 14)
+    # test_bohb(cs, 15)
+    # test_mfse_single(cs, 21)
+    # test_mfse_single(cs, 22)
+    # test_mfse_single(cs, 23)
+    # test_mfse_single(cs, 24)
+    # test_mfse_single(cs, 25)
+    # test_mfse_average(cs, 31)
+    # test_mfse_average(cs, 32)
+    # test_mfse_average(cs, 33)
+    # test_mfse_average(cs, 34)
+    # test_mfse_average(cs, 35)
+    # test_mfse(cs, 41)
+    # test_mfse(cs, 42)
+    # test_mfse(cs, 43)
+    # test_mfse(cs, 44)
+    # test_mfse(cs, 45)
+
+    test_mfse(cs, 101)
+    #test_mfse_single(cs, 102)
