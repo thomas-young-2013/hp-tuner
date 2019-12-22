@@ -1,8 +1,6 @@
 import time
 import numpy as np
 from math import log, ceil
-from sklearn.model_selection import KFold
-
 from mfes.utils.util_funcs import get_types
 from mfes.facade.base_facade import BaseFacade
 from mfes.config_space import ConfigurationSpace
@@ -43,9 +41,6 @@ class MFSE(BaseFacade):
         types, bounds = get_types(config_space)
         self.num_config = len(bounds)
 
-        self.weighted_surrogate_update = WeightedRandomForestCluster(
-            types, bounds, self.s_max, self.eta, init_weight, self.fusion_method
-        )
         self.weighted_surrogate = WeightedRandomForestCluster(
             types, bounds, self.s_max, self.eta, init_weight, self.fusion_method
         )
@@ -138,10 +133,10 @@ class MFSE(BaseFacade):
             self.remove_immediate_model()
 
             for item in self.iterate_r[self.iterate_r.index(r):]:
-                # Do not use normalization due to cross validation for ranking loss
-                # normalized_y = minmax_normalization(self.target_y[item])
+                # NORMALIZE Objective value: MinMax linear normalization
+                normalized_y = minmax_normalization(self.target_y[item])
                 self.weighted_surrogate.train(convert_configurations_to_array(self.target_x[item]),
-                                              np.array(self.target_y[item], dtype=np.float64), r=item)
+                                              np.array(normalized_y, dtype=np.float64), r=item)
 
     @BaseFacade.process_manage
     def run(self):
@@ -168,7 +163,7 @@ class MFSE(BaseFacade):
         config_cnt = 0
         config_candidates = list()
         total_sample_cnt = 0
-
+        
         while config_cnt < num_config and total_sample_cnt < 3 * num_config:
             incumbent = dict()
             max_r = self.iterate_r[-1]
@@ -236,13 +231,12 @@ class MFSE(BaseFacade):
         max_r = self.iterate_r[-1]
         incumbent_configs = self.target_x[max_r]
         test_x = convert_configurations_to_array(incumbent_configs)
-        # test_y = minmax_normalization(self.target_y[max_r])
-        test_y = np.array(self.target_y[max_r])
+        test_y = minmax_normalization(self.target_y[max_r])
+        test_y = np.array(test_y)
 
         # Get previous weights
         r_list = self.weighted_surrogate.surrogate_r
 
-        kfold = KFold(n_splits=5)
         # Get means and vars
         mean_list = list()
         order_weight = list()
@@ -258,7 +252,7 @@ class MFSE(BaseFacade):
                         if np.all(line == train_r_x[idx]):
                             train_r_idx.append(idx)
                 self.weighted_surrogate_update.train(train_r_x[train_r_idx], train_r_y[train_r_idx], r=r)
-
+                
                 for line in test_x[valid_idx]:
                     for idx in range(train_r_x.shape[0]):
                         if np.all(line == train_r_x[idx]):
@@ -268,13 +262,19 @@ class MFSE(BaseFacade):
             print("pred_y" + str(pred_y))
             print("test_y" + str(test_y))
             order_weight.append(self._ordered_pair(pred_y, test_y))
+       
+        if self.weight_method == 'softmax':
+            order_weight = np.array(np.sqrt(order_weight))  # Square root of ordered pair
+            trans_order_weight = order_weight - np.max(order_weight)
 
-        order_weight = np.array(np.sqrt(order_weight))  # Square root of ordered pairs
-        trans_order_weight = order_weight - np.max(order_weight)
+            # Softmax mapping.
+            order_weight = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))
+            self.logger.info('Updating weights: %s' % str(order_weight))
+        # TODO: Add more weight learning mehtods here.
+        else:
+            raise ValueError('Invalid weight method: %s!' % self.weight_method)
 
-        # Softmax mapping.
-        order_weight = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))
-        self.logger.info('Updating weights: %s' % str(order_weight))
+        
 
         # means = np.array(mean_list)
         # vars = np.array(var_list) + 1e-8
@@ -304,7 +304,8 @@ class MFSE(BaseFacade):
         self.logger.info('Current weights are: %s' % str(updated_weights))
         self.hist_weights.append(updated_weights)
 
-        np.save('data/tmp_weights_%s.npy' % self.method_name, np.asarray(self.hist_weights))
+        # Save the weight data.
+        np.save('data/%s_weights_%s.npy' % (self.method_name, self.method_name), np.asarray(self.hist_weights))
 
     def get_incumbent(self, num_inc=1):
         assert (len(self.incumbent_perfs) == len(self.incumbent_configs))
