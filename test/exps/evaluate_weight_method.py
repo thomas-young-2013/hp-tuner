@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
                     choices=['fcnet', 'resnet', 'xgb'],
                     default='fcnet')
-parser.add_argument('--methods', type=str, default='softmax')
+parser.add_argument('--methods', type=str, default='rank_loss_softmax,rank_loss_prob,single_source')
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=1)
 parser.add_argument('--hb_iter', type=int, default=20000)
@@ -44,11 +44,19 @@ else:
 
 def evaluate_weight_learning(method, cs, id):
     _seed = seeds[id]
+
+    multi_source_used = True
+    if method == 'single_source':
+        multi_source_used = False
+        weight_method = 'rank_loss_softmax'
+    else:
+        weight_method = method
     optimizer = MFSE(cs, train, maximal_iter,
-                     weight_method=method,
+                     weight_method=weight_method,
                      num_iter=iter_num,
                      n_workers=n_worker,
-                     random_state=_seed)
+                     random_state=_seed,
+                     multi_surrogate=multi_source_used)
 
     if benchmark_id == 'xgb':
         optimizer.restart_needed = True

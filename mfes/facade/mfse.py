@@ -228,7 +228,6 @@ class MFSE(BaseFacade):
         # Get previous weights
         r_list = self.weighted_surrogate.surrogate_r
         K = len(r_list)
-
         if self.weight_method == 'rank_loss_softmax':
             # Get means and vars
             mean_list = list()
@@ -285,6 +284,11 @@ class MFSE(BaseFacade):
             raise ValueError('Invalid weight method: %s!' % self.weight_method)
 
         self.logger.info('Updating weights: %s' % str(new_weights))
+
+        if not self.multi_surrogate:
+            _idx = np.argmax(new_weights)
+            new_weights = [0.] * len(new_weights)
+            new_weights[_idx] = 1.
 
         # Assign the weight to each basic surrogate.
         for i, r in enumerate(r_list):
