@@ -16,7 +16,7 @@ class MFSE(BaseFacade):
 
     def __init__(self, config_space: ConfigurationSpace, objective_func, R,
                  num_iter=10000, eta=3, p=0.5, n_workers=1, random_state=1,
-                 init_weight=None, update_enable=True,
+                 init_weight=None, update_enable=True, weight_method='softmax',
                  multi_surrogate=True, fusion_method='gpoe'):
         BaseFacade.__init__(self, objective_func, n_workers=n_workers)
         self.config_space = config_space
@@ -30,6 +30,8 @@ class MFSE(BaseFacade):
         self.num_iter = num_iter
         self.update_enable = update_enable
         self.fusion_method = fusion_method
+        # Specify the weight learning method.
+        self.weight_method = weight_method
 
         self.config_space.seed(self.seed)
         self.weight_update_id = 0
@@ -53,6 +55,7 @@ class MFSE(BaseFacade):
 
         self.iterate_id = 0
         self.iterate_r = []
+        # Record the weight updating history.
         self.hist_weights = list()
 
         # Saving evaluation statistics in Hyperband.
@@ -248,29 +251,18 @@ class MFSE(BaseFacade):
             # loss_list.append(self._calculate_loss(tmp_y, test_y))
             order_weight.append(self._ordered_pair(tmp_y, test_y))
 
-        order_weight = np.array(np.sqrt(order_weight))  # Square root of ordered pair
-        trans_order_weight = order_weight - np.max(order_weight)
+        if self.weight_method == 'softmax':
+            order_weight = np.array(np.sqrt(order_weight))  # Square root of ordered pair
+            trans_order_weight = order_weight - np.max(order_weight)
 
-        # Softmax mapping.
-        order_weight = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))
-        self.logger.info('Updating weights: %s' % str(order_weight))
+            # Softmax mapping.
+            order_weight = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))
+            self.logger.info('Updating weights: %s' % str(order_weight))
+        # TODO: Add more weight learning mehtods here.
+        else:
+            raise ValueError('Invalid weight method: %s!' % self.weight_method)
 
-        # means = np.array(mean_list)
-        # vars = np.array(var_list) + 1e-8
-
-        # if self.multi_surrogate:
-        #     def min_func(x):
-        #         x = np.reshape(np.array(x), (1, len(x)))
-        #         ensemble_vars = 1 / (x @ (1 / vars))
-        #         ensemble_means = x @ (means / vars) * ensemble_vars
-        #         ensemble_means = np.reshape(ensemble_means, -1)
-        #         return self._calculate_loss(ensemble_means, test_y)
-        #
-        #     constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
-        #                    {'type': 'ineq', 'fun': lambda x: x - 0},
-        #                    {'type': 'ineq', 'fun': lambda x: 1 - x}]
-        #     res = minimize(min_func, curr_list, constraints=constraints)
-
+        # Assign each weight to the corresponding surrogate.
         updated_weights = list()
         max_surrogate_id = np.argmax(order_weight)
         for i, r in enumerate(r_list):
@@ -283,7 +275,8 @@ class MFSE(BaseFacade):
         self.logger.info('Current weights are: %s' % str(updated_weights))
         self.hist_weights.append(updated_weights)
 
-        np.save('data/tmp_weights_%s.npy' % self.method_name, np.asarray(self.hist_weights))
+        # Save the weight data.
+        np.save('data/%s_weights_%s.npy' % (self.method_name, self.method_name), np.asarray(self.hist_weights))
 
     def get_incumbent(self, num_inc=1):
         assert (len(self.incumbent_perfs) == len(self.incumbent_configs))
