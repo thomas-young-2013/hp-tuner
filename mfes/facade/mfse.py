@@ -211,7 +211,7 @@ class MFSE(BaseFacade):
         total_pair_num, order_preserving_num = 0, 0
         for idx in range(array_size):
             for inner_idx in range(idx+1, array_size):
-                if y_true[idx] > y_true[inner_idx] and y_pred[idx] > y_pred[inner_idx]:
+                if not (y_true[idx] > y_true[inner_idx] ^ y_pred[idx] > y_pred[inner_idx]):
                     order_preserving_num += 1
                 total_pair_num += 1
         if preserve_order:
