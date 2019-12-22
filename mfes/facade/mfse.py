@@ -1,6 +1,8 @@
 import time
 import numpy as np
 from math import log, ceil
+from sklearn.model_selection import KFold
+
 from mfes.utils.util_funcs import get_types
 from mfes.facade.base_facade import BaseFacade
 from mfes.config_space import ConfigurationSpace
@@ -41,6 +43,9 @@ class MFSE(BaseFacade):
         types, bounds = get_types(config_space)
         self.num_config = len(bounds)
 
+        self.weighted_surrogate_update = WeightedRandomForestCluster(
+            types, bounds, self.s_max, self.eta, init_weight, self.fusion_method
+        )
         self.weighted_surrogate = WeightedRandomForestCluster(
             types, bounds, self.s_max, self.eta, init_weight, self.fusion_method
         )
@@ -133,10 +138,10 @@ class MFSE(BaseFacade):
             self.remove_immediate_model()
 
             for item in self.iterate_r[self.iterate_r.index(r):]:
-                # NORMALIZE Objective value: MinMax linear normalization
-                normalized_y = minmax_normalization(self.target_y[item])
+                # Do not use normalization due to cross validation for ranking loss
+                # normalized_y = minmax_normalization(self.target_y[item])
                 self.weighted_surrogate.train(convert_configurations_to_array(self.target_x[item]),
-                                              np.array(normalized_y, dtype=np.float64), r=item)
+                                              np.array(self.target_y[item], dtype=np.float64), r=item)
 
     @BaseFacade.process_manage
     def run(self):
@@ -163,7 +168,7 @@ class MFSE(BaseFacade):
         config_cnt = 0
         config_candidates = list()
         total_sample_cnt = 0
-        
+
         while config_cnt < num_config and total_sample_cnt < 3 * num_config:
             incumbent = dict()
             max_r = self.iterate_r[-1]
@@ -231,24 +236,40 @@ class MFSE(BaseFacade):
         max_r = self.iterate_r[-1]
         incumbent_configs = self.target_x[max_r]
         test_x = convert_configurations_to_array(incumbent_configs)
-        test_y = minmax_normalization(self.target_y[max_r])
-        test_y = np.array(test_y)
+        # test_y = minmax_normalization(self.target_y[max_r])
+        test_y = np.array(self.target_y[max_r])
 
         # Get previous weights
         r_list = self.weighted_surrogate.surrogate_r
 
+        kfold = KFold(n_splits=5)
         # Get means and vars
         mean_list = list()
         order_weight = list()
         for i, r in enumerate(r_list):
-            mean, var = self.weighted_surrogate.surrogate_container[r].predict(test_x)
-            tmp_y = np.reshape(mean, -1)
-            mean_list.append(tmp_y)
-            # var_list.append(tmp_var)
-            # loss_list.append(self._calculate_loss(tmp_y, test_y))
-            order_weight.append(self._ordered_pair(tmp_y, test_y))
+            pred_y = np.zeros(shape=test_y.shape)
+            for train_idx, valid_idx in kfold.split(test_x):
+                train_r_x = convert_configurations_to_array(self.target_x[r])
+                train_r_y = np.array(self.target_y[r], dtype=np.float64)
+                train_r_idx = []
+                valid_r_idx = []
+                for line in test_x[train_idx]:
+                    for idx in range(train_r_x.shape[0]):
+                        if np.all(line == train_r_x[idx]):
+                            train_r_idx.append(idx)
+                self.weighted_surrogate_update.train(train_r_x[train_r_idx], train_r_y[train_r_idx], r=r)
 
-        order_weight = np.array(np.sqrt(order_weight))  # Square root of ordered pair
+                for line in test_x[valid_idx]:
+                    for idx in range(train_r_x.shape[0]):
+                        if np.all(line == train_r_x[idx]):
+                            valid_r_idx.append(idx)
+                mean, _ = self.weighted_surrogate_update.predict(train_r_x[valid_r_idx])
+                pred_y[valid_r_idx] = mean
+            print("pred_y" + str(pred_y))
+            print("test_y" + str(test_y))
+            order_weight.append(self._ordered_pair(pred_y, test_y))
+
+        order_weight = np.array(np.sqrt(order_weight))  # Square root of ordered pairs
         trans_order_weight = order_weight - np.max(order_weight)
 
         # Softmax mapping.
