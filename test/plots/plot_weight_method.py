@@ -42,6 +42,7 @@ def plot_curve():
             method_name = "eval-w_%s-%s-%d-%d-%d" % (method, benchmark_id, id, runtime_limit, n_worker)
             with open('data/%s.npy' % method_name, 'rb') as f:
                 data = pickle.load(f)
+            x, y = data
 
 
 
