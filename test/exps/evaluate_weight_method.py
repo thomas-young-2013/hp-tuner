@@ -49,19 +49,22 @@ else:
 
 def evaluate_weight_learning(method, cs, id):
     _seed = seeds[id]
+    power_num = args.power_num
+    method_name = "eval-w_%s-%s-%d-%d-%d-%d" % (method, benchmark_id, id, runtime_limit, n_worker, power_num)
 
     optimizer = MFSE(cs, train, maximal_iter,
                      weight_method=method,
                      num_iter=iter_num,
                      n_workers=n_worker,
-                     random_state=_seed)
+                     random_state=_seed,
+                     method_id=method_name,
+                     power_num=power_num)
 
     if benchmark_id == 'xgb':
         optimizer.restart_needed = True
-    power_num = args.power_num
+
     optimizer.runtime_limit = runtime_limit
-    method_name = "eval-w_%s-%s-%d-%d-%d-%d" % (method, benchmark_id, id, runtime_limit, n_worker, power_num)
-    optimizer.set_method_name(method_name)
+
     optimizer.run()
     print(optimizer.get_incumbent(5))
     return optimizer.get_incumbent(5)

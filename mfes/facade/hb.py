@@ -11,8 +11,8 @@ class Hyperband(BaseFacade):
         The paper can be found in http://www.jmlr.org/papers/volume18/16-558/16-558.pdf .
     """
     def __init__(self, config_space: ConfigurationSpace, objective_func, R, 
-                 num_iter=10000, eta=3, n_workers=1, random_state=1):
-        BaseFacade.__init__(self, objective_func, n_workers=n_workers)
+                 num_iter=10000, eta=3, n_workers=1, random_state=1, method_id='Default'):
+        BaseFacade.__init__(self, objective_func, n_workers=n_workers, method_name=method_id)
         self.seed = random_state
         self.configuration_space = config_space
         self.configuration_space.seed(self.seed)

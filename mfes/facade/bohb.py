@@ -19,8 +19,8 @@ class BOHB(BaseFacade):
     """
 
     def __init__(self, config_space: ConfigurationSpace, objective_func, R,
-                 num_iter=10000, eta=3, p=0.3, n_workers=1, random_state=1):
-        BaseFacade.__init__(self, objective_func, n_workers=n_workers)
+                 num_iter=10000, eta=3, p=0.3, n_workers=1, random_state=1, method_id='Default'):
+        BaseFacade.__init__(self, objective_func, n_workers=n_workers, method_name=method_id)
         self.config_space = config_space
         self.seed = random_state
         self.config_space.seed(self.seed)

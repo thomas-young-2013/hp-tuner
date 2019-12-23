@@ -57,22 +57,26 @@ def evaluate_objective_function(cs):
 
 def evaluate_baseline(baseline_id, cs, id):
     _seed = seeds[id]
+    method_name = "%s-%s-%d-%d-%d" % (baseline_id, benchmark_id, id, runtime_limit, n_worker)
     if baseline_id == 'hb':
-        optimizer = Hyperband(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_worker, random_state=_seed)
+        optimizer = Hyperband(cs, train, maximal_iter, num_iter=iter_num,
+                              n_workers=n_worker, random_state=_seed, method_id=method_name)
     elif baseline_id == 'bohb':
-        optimizer = BOHB(cs, train, maximal_iter, num_iter=iter_num, p=0.3, n_workers=n_worker, random_state=_seed)
+        optimizer = BOHB(cs, train, maximal_iter, num_iter=iter_num,
+                         p=0.3, n_workers=n_worker, random_state=_seed, method_id=method_name)
     elif baseline_id == 'mbhb':
-        optimizer = MBHB(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_worker, random_state=_seed)
+        optimizer = MBHB(cs, train, maximal_iter, num_iter=iter_num,
+                         n_workers=n_worker, random_state=_seed, method_id=method_name)
     elif baseline_id == 'mfse':
-        optimizer = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_worker, random_state=_seed)
+        optimizer = MFSE(cs, train, maximal_iter, num_iter=iter_num,
+                         n_workers=n_worker, random_state=_seed, method_id=method_name)
     else:
         raise ValueError('Invalid baseline name: %s' % baseline_id)
 
     if benchmark_id == 'xgb':
         optimizer.restart_needed = True
     optimizer.runtime_limit = runtime_limit
-    method_name = "%s-%s-%d-%d-%d" % (baseline_id, benchmark_id, id, runtime_limit, n_worker)
-    optimizer.set_method_name(method_name)
+
     optimizer.run()
     print(optimizer.get_incumbent(5))
     return optimizer.get_incumbent(5)

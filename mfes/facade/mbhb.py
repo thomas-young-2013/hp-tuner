@@ -13,8 +13,9 @@ from mfes.model.lcnet import LC_ES
 class MBHB(BaseFacade):
 
     def __init__(self, config_space, objective_func, R,
-                 num_iter=10000, eta=3, p=0.5, n_workers=1, random_state=1):
-        BaseFacade.__init__(self, objective_func, n_workers=n_workers, need_lc=True)
+                 num_iter=10000, eta=3, p=0.5, n_workers=1, random_state=1, method_id='Default'):
+        BaseFacade.__init__(self, objective_func, n_workers=n_workers,
+                            need_lc=True, method_name=method_id)
         self.config_space = config_space
         self.seed = random_state
         self.config_space.seed(self.seed)
