@@ -17,14 +17,14 @@ class WeightedRandomForestCluster(AbstractEPM):
         self.surrogate_container = dict()
         self.surrogate_r = list()
         self.weight_list = weight_list
-        for index, item in enumerate(np.logspace(0, self.s_max, self.s_max+1, base=self.eta)):
+        for index, item in enumerate(np.logspace(0, self.s_max, self.s_max + 1, base=self.eta)):
             r = int(item)
             self.surrogate_r.append(r)
             self.surrogate_weight[r] = self.weight_list[self.s_max - index]
             self.surrogate_container[r] = RandomForestWithInstances(types=types, bounds=bounds)
 
     def _train(self, X: np.ndarray, y: np.ndarray, **kwargs):
-        assert('r' in kwargs)
+        assert ('r' in kwargs)
         r = kwargs['r']
         self.surrogate_container[r].train(X, y)
 
@@ -39,8 +39,8 @@ class WeightedRandomForestCluster(AbstractEPM):
             means, vars = np.zeros((X.shape[0], 1)), np.zeros((X.shape[0], 1))
             for r in self.surrogate_r:
                 mean, var = self.surrogate_container[r].predict(X)
-                means += self.surrogate_weight[r]*mean
-                vars += self.surrogate_weight[r]*self.surrogate_weight[r]*var
+                means += self.surrogate_weight[r] * mean
+                vars += self.surrogate_weight[r] * self.surrogate_weight[r] * var
             return means.reshape((-1, 1)), vars.reshape((-1, 1))
         elif self.fusion == 'gpoe':
             n = X.shape[0]
@@ -51,7 +51,7 @@ class WeightedRandomForestCluster(AbstractEPM):
             for i, r in enumerate(self.surrogate_r):
                 mu_t, var_t = self.surrogate_container[r].predict(X)
                 mu_t = mu_t.flatten()
-                var_t = var_t.flatten()
+                var_t = var_t.flatten() + 1e-8
                 # compute the gaussian experts.
                 var_buf[:, i] = 1. / var_t * self.surrogate_weight[r]
                 mu_buf[:, i] = 1. / var_t * mu_t * self.surrogate_weight[r]

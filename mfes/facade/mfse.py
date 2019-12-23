@@ -2,11 +2,12 @@ import time
 import numpy as np
 from math import log, ceil
 from sklearn.model_selection import KFold
+from scipy.optimize import minimize
+
 from mfes.utils.util_funcs import get_types
 from mfes.facade.base_facade import BaseFacade
 from mfes.config_space import ConfigurationSpace
 from mfes.acquisition_function.acquisition import EI
-from mfes.utils.util_funcs import minmax_normalization
 from mfes.config_space.util import expand_configurations
 from mfes.optimizer.random_sampling import RandomSampling
 from mfes.model.rf_with_instances import RandomForestWithInstances
@@ -18,8 +19,8 @@ class MFSE(BaseFacade):
 
     def __init__(self, config_space: ConfigurationSpace, objective_func, R,
                  num_iter=10000, eta=3, p=0.3, n_workers=1, random_state=1,
-                 init_weight=None, update_enable=True, weight_method='rank_loss_softmax',
-                 multi_surrogate=True, fusion_method='gpoe'):
+                 init_weight=None, update_enable=True,
+                 weight_method='rank_loss_softmax', fusion_method='gpoe'):
         BaseFacade.__init__(self, objective_func, n_workers=n_workers)
         self.config_space = config_space
         self.p = p
@@ -36,7 +37,6 @@ class MFSE(BaseFacade):
         self.weight_method = weight_method
         self.config_space.seed(self.seed)
         self.weight_update_id = 0
-        self.multi_surrogate = multi_surrogate
 
         if init_weight is None:
             init_weight = [1. / (self.s_max + 1)] * (self.s_max + 1)
@@ -44,9 +44,6 @@ class MFSE(BaseFacade):
         types, bounds = get_types(config_space)
         self.num_config = len(bounds)
 
-        self.weighted_surrogate_update = WeightedRandomForestCluster(
-            types, bounds, self.s_max, self.eta, init_weight, self.fusion_method
-        )
         self.weighted_surrogate = WeightedRandomForestCluster(
             types, bounds, self.s_max, self.eta, init_weight, self.fusion_method
         )
@@ -139,9 +136,8 @@ class MFSE(BaseFacade):
             self.remove_immediate_model()
 
             for item in self.iterate_r[self.iterate_r.index(r):]:
-                normalized_y = minmax_normalization(self.target_y[item])
                 self.weighted_surrogate.train(convert_configurations_to_array(self.target_x[item]),
-                                              np.array(normalized_y, dtype=np.float64), r=item)
+                                              np.array(self.target_y[item], dtype=np.float64), r=item)
 
     @BaseFacade.process_manage
     def run(self):
@@ -189,7 +185,6 @@ class MFSE(BaseFacade):
             config_candidates = expand_configurations(config_candidates, self.config_space, num_config)
         return config_candidates
 
-    @staticmethod
     def calculate_ranking_loss(self, y_pred, y_true):
         length = len(y_pred)
         y_pred = np.reshape(y_pred, -1)
@@ -203,15 +198,14 @@ class MFSE(BaseFacade):
         loss = np.sum(np.log(1 + np.exp(-diff)) * y_mask) / length
         return loss
 
-    @staticmethod
     def calculate_preserving_order_num(self, y_pred, y_true, preserve_order=True):
         array_size = len(y_pred)
         assert len(y_true) == array_size
 
         total_pair_num, order_preserving_num = 0, 0
         for idx in range(array_size):
-            for inner_idx in range(idx+1, array_size):
-                if not (y_true[idx] > y_true[inner_idx] ^ y_pred[idx] > y_pred[inner_idx]):
+            for inner_idx in range(idx + 1, array_size):
+                if not ((y_true[idx] > y_true[inner_idx]) ^ (y_pred[idx] > y_pred[inner_idx])):
                     order_preserving_num += 1
                 total_pair_num += 1
         if preserve_order:
@@ -228,20 +222,41 @@ class MFSE(BaseFacade):
         # Get previous weights
         r_list = self.weighted_surrogate.surrogate_r
         K = len(r_list)
-        if self.weight_method == 'rank_loss_softmax':
-            # Get means and vars
-            mean_list = list()
+        if self.weight_method in ['rank_loss_softmax', 'rank_loss_single']:
             preserving_order_nums = list()
             for i, r in enumerate(r_list):
-                mean, var = self.weighted_surrogate.surrogate_container[r].predict(test_x)
-                tmp_y = np.reshape(mean, -1)
-                mean_list.append(tmp_y)
-                preserving_order_nums.append(self.calculate_preserving_order_num(tmp_y, test_y))
+                if i != K - 1:
+                    mean, var = self.weighted_surrogate.surrogate_container[r].predict(test_x)
+                    tmp_y = np.reshape(mean, -1)
+                    preserving_order_nums.append(self.calculate_preserving_order_num(tmp_y, test_y))
+                else:
+                    if len(test_y) < 10:
+                        preserving_order_nums.append(0)
+                    else:
+                        # 5-fold cross validation.
+                        kfold = KFold(n_splits=5)
+                        cv_pred = np.array([0] * len(test_y))
+                        for train_idx, valid_idx in kfold.split(test_x):
+                            train_configs, train_y = test_x[train_idx], test_y[train_idx]
+                            valid_configs, valid_y = test_x[valid_idx], test_y[valid_idx]
+                            types, bounds = get_types(self.config_space)
+                            _surrogate = RandomForestWithInstances(types=types, bounds=bounds)
+                            _surrogate.train(train_configs, train_y)
+                            pred, _ = _surrogate.predict(valid_configs)
+                            cv_pred[valid_idx] = pred.reshape(-1)
+                        _num = self.calculate_preserving_order_num(cv_pred, test_y)
+                        preserving_order_nums.append(_num)
+
             order_weight = np.array(np.sqrt(preserving_order_nums))
             trans_order_weight = order_weight - np.max(order_weight)
-            # Softmax mapping.
-            new_weights = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))
-        # TODO: Add more weight learning mehtods here.
+            if self.weight_method == 'rank_loss_softmax':
+                # Softmax mapping.
+                new_weights = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))
+            else:
+                _idx = np.argmax(trans_order_weight)
+                new_weights = [0.] * len(trans_order_weight)
+                new_weights[_idx] = 1.
+
         elif self.weight_method == 'rank_loss_prob':
             # For basic surrogate i=1:K-1.
             mean_list, var_list = list(), list()
@@ -266,29 +281,69 @@ class MFSE(BaseFacade):
                 else:
                     # 5-fold cross validation.
                     kfold = KFold(n_splits=5)
-                    cv_pred = np.array([0]*len(test_y))
+                    cv_pred = np.array([0] * len(test_y))
                     for train_idx, valid_idx in kfold.split(test_x):
                         train_configs, train_y = test_x[train_idx], test_y[train_idx]
                         valid_configs, valid_y = test_x[valid_idx], test_y[valid_idx]
                         types, bounds = get_types(self.config_space)
                         _surrogate = RandomForestWithInstances(types=types, bounds=bounds)
                         _surrogate.train(train_configs, train_y)
-                        pred = _surrogate.predict(valid_configs)
+                        pred, _ = _surrogate.predict(valid_configs)
                         cv_pred[valid_idx] = pred.reshape(-1)
                     _num = self.calculate_preserving_order_num(cv_pred, test_y)
                     order_preseving_nums.append(_num)
                 max_id = np.argmax(order_preseving_nums)
                 min_probability_array[max_id] += 1
             new_weights = np.array(min_probability_array) / sample_num
+
+        elif self.weight_method == 'opt_based':
+            mean_list, var_list = list(), list()
+            for i, r in enumerate(r_list):
+                if i != K - 1:
+                    mean, var = self.weighted_surrogate.surrogate_container[r].predict(test_x)
+                    tmp_y = np.reshape(mean, -1)
+                    tmp_var = np.reshape(var, -1)
+                    mean_list.append(tmp_y)
+                    var_list.append(tmp_var)
+                else:
+                    if len(test_y) < 8:
+                        mean_list.append(np.array([0] * len(test_y)))
+                        var_list.append(np.array([0] * len(test_y)))
+                    else:
+                        # 5-fold cross validation.
+                        kfold = KFold(n_splits=5)
+                        cv_pred = np.array([0] * len(test_y))
+                        cv_var = np.array([0] * len(test_y))
+                        for train_idx, valid_idx in kfold.split(test_x):
+                            train_configs, train_y = test_x[train_idx], test_y[train_idx]
+                            valid_configs, valid_y = test_x[valid_idx], test_y[valid_idx]
+                            types, bounds = get_types(self.config_space)
+                            _surrogate = RandomForestWithInstances(types=types, bounds=bounds)
+                            _surrogate.train(train_configs, train_y)
+                            pred, var = _surrogate.predict(valid_configs)
+                            cv_pred[valid_idx] = pred.reshape(-1)
+                            cv_var[valid_idx] = var.reshape(-1)
+                        mean_list.append(cv_pred)
+                        var_list.append(cv_var)
+            means = np.array(mean_list)
+            vars = np.array(var_list) + 1e-8
+
+            def min_func(x):
+                x = np.reshape(np.array(x), (1, len(x)))
+                ensemble_vars = 1 / (x @ (1 / vars))
+                ensemble_means = x @ (means / vars) * ensemble_vars
+                ensemble_means = np.reshape(ensemble_means, -1)
+                return self.calculate_ranking_loss(ensemble_means, test_y)
+
+            constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
+                           {'type': 'ineq', 'fun': lambda x: x - 0},
+                           {'type': 'ineq', 'fun': lambda x: 1 - x}]
+            res = minimize(min_func, np.array([1 / len(r_list)] * len(r_list)), constraints=constraints)
+            new_weights = res.x
         else:
             raise ValueError('Invalid weight method: %s!' % self.weight_method)
 
         self.logger.info('Updating weights: %s' % str(new_weights))
-
-        if not self.multi_surrogate:
-            _idx = np.argmax(new_weights)
-            new_weights = [0.] * len(new_weights)
-            new_weights[_idx] = 1.
 
         # Assign the weight to each basic surrogate.
         for i, r in enumerate(r_list):

@@ -52,7 +52,7 @@ def train(epochs_num, params, logger=None):
     need_lc = params['need_lc']
     display_step = 50
     epoch_size = 48000
-    iter_num = int(epochs_num)*epoch_size // batch_size
+    iter_num = int(epochs_num) * epoch_size // batch_size
     lc_iter_num = epoch_size // batch_size
     lc_info = []
 
@@ -102,8 +102,9 @@ def train(epochs_num, params, logger=None):
         init = tf.global_variables_initializer()
         saver = tf.train.Saver()
 
-    config = tf.ConfigProto()
-    #config.gpu_options.allow_growth = True
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.09)
+    config = tf.ConfigProto(gpu_options=gpu_options)
+    # config.gpu_options.allow_growth = True
     early_stop = False
     with tf.Session(graph=graph, config=config) as sess:
 
@@ -114,7 +115,8 @@ def train(epochs_num, params, logger=None):
             while test_idx < x_val.shape[0]:
                 test_x = x_val[test_idx: test_idx + batch_size]
                 test_y = y_val[test_idx: test_idx + batch_size]
-                acc_t, loss_t = sess.run([accuracy, loss_op], feed_dict={X: test_x, Y: test_y, keep_prob1: 1, keep_prob2: 1})
+                acc_t, loss_t = sess.run([accuracy, loss_op],
+                                         feed_dict={X: test_x, Y: test_y, keep_prob1: 1, keep_prob2: 1})
                 acc.append(acc_t)
                 loss.append(loss_t)
                 test_idx += batch_size
@@ -127,10 +129,10 @@ def train(epochs_num, params, logger=None):
         if os.path.exists(read_model_path + '.meta'):
             saver.restore(sess, read_model_path)
             print('=====================> read model from local file %s' % read_model_path)
-            print('='*100)
+            print('=' * 100)
 
         # Do images classification
-        for i in range(1, iter_num+1):
+        for i in range(1, iter_num + 1):
             batch_xs, batch_ys = next_batch(batch_size, x_train, y_train)
             sess.run(train_op, feed_dict={X: batch_xs, Y: batch_ys, keep_prob1: kb_1, keep_prob2: kb_2})
             # if nan encountered, just break.
@@ -154,4 +156,4 @@ def train(epochs_num, params, logger=None):
             early_stop = True
         save_path = saver.save(sess, save_model_path)
         print("Model saved in file: %s" % save_path)
-        return {'loss': 1-ret_acc, 'early_stop': early_stop, 'lc_info': lc_info}
+        return {'loss': 1 - ret_acc, 'early_stop': early_stop, 'lc_info': lc_info}

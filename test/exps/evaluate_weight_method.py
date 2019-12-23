@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import numpy as np
+
 sys.path.append(os.getcwd())
 from mfes.evaluate_function.hyperparameter_space_utils import get_benchmark_configspace
 from mfes.facade.mfse import MFSE
@@ -10,12 +11,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
                     choices=['fcnet', 'resnet', 'xgb'],
                     default='fcnet')
-parser.add_argument('--methods', type=str, default='rank_loss_softmax,rank_loss_prob,single_source')
+parser.add_argument('--methods', type=str, default='rank_loss_softmax,rank_loss_single,rank_loss_prob,opt_based',
+                    choices=['rank_loss_softmax', 'rank_loss_single', 'rank_loss_prob', 'opt_based'])
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=1)
 parser.add_argument('--hb_iter', type=int, default=20000)
 parser.add_argument('--runtime_limit', type=int, default=7200)
 parser.add_argument('--rep_num', type=int, default=5)
+parser.add_argument('--id', type=int, default=0)
 args = parser.parse_args()
 
 benchmark_id = args.benchmark
@@ -25,11 +28,12 @@ n_worker = args.n
 runtime_limit = args.runtime_limit
 methods = args.methods.split(',')
 rep_num = args.rep_num
+idx = args.id
 print('training params: R-%d | iter-%d | workers-%d' % (maximal_iter, iter_num, n_worker))
 
 # Generate random seeds.
 np.random.seed(1)
-seeds = np.random.randint(low=1, high=10000, size=rep_num)
+seeds = np.random.randint(low=1, high=10000, size=5000)
 
 # Load evaluation objective according to benchmark name.
 if benchmark_id == 'fcnet':
@@ -45,18 +49,11 @@ else:
 def evaluate_weight_learning(method, cs, id):
     _seed = seeds[id]
 
-    multi_source_used = True
-    if method == 'single_source':
-        multi_source_used = False
-        weight_method = 'rank_loss_softmax'
-    else:
-        weight_method = method
     optimizer = MFSE(cs, train, maximal_iter,
-                     weight_method=weight_method,
+                     weight_method=method,
                      num_iter=iter_num,
                      n_workers=n_worker,
-                     random_state=_seed,
-                     multi_surrogate=multi_source_used)
+                     random_state=_seed)
 
     if benchmark_id == 'xgb':
         optimizer.restart_needed = True
@@ -69,7 +66,8 @@ def evaluate_weight_learning(method, cs, id):
 
 
 if __name__ == "__main__":
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     cs = get_benchmark_configspace(benchmark_id)
-    for _id in range(rep_num):
-        for _method in methods:
-            evaluate_weight_learning(_method, cs, _id)
+    for _method in methods:
+        evaluate_weight_learning(_method, cs, idx)

@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import numpy as np
+
 sys.path.append(os.getcwd())
 from mfes.evaluate_function.hyperparameter_space_utils import get_benchmark_configspace
 from mfes.facade.bohb import BOHB
@@ -13,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
                     choices=['fcnet', 'resnet', 'xgb'],
                     default='fcnet')
-parser.add_argument('--baselines', type=str, default='hb,bohb,mfes')
+parser.add_argument('--baseline', type=str, default='hb,bohb,mfes')
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=1)
 parser.add_argument('--hb_iter', type=int, default=20000)
@@ -59,7 +60,7 @@ def evaluate_baseline(baseline_id, cs, id):
         optimizer = BOHB(cs, train, maximal_iter, num_iter=iter_num, p=0.3, n_workers=n_worker, random_state=_seed)
     elif baseline_id == 'mbhb':
         optimizer = MBHB(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_worker, random_state=_seed)
-    elif baseline_id == 'mfes':
+    elif baseline_id == 'mfse':
         optimizer = MFSE(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_worker, random_state=_seed)
     else:
         raise ValueError('Invalid baseline name: %s' % baseline_id)
@@ -75,6 +76,8 @@ def evaluate_baseline(baseline_id, cs, id):
 
 
 if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICE"] = '2'
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = '2'
     cs = get_benchmark_configspace(benchmark_id)
     for _id in range(rep_num):
         for _baseline in baselines:
