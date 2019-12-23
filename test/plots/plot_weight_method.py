@@ -85,12 +85,13 @@ if __name__ == "__main__":
             path = os.path.join("data", filename)
             array = np.load(path)
             array_list.append(array)
+        label_name = r'\textbf{%s}' % method.replace('_', '-')
         x, y_mean, y_var = create_plot_points(array_list, 1, runtime_limit, point_num=n_points)
-        ax.plot(x, y_mean, lw=lw, label=r'\textbf{%s}' % method.replace('_', '-'), color=color_dict[method],
+        ax.plot(x, y_mean, lw=lw, label=label_name, color=color_dict[method],
                 marker=marker_dict[method], markersize=ms, markevery=me)
 
         line = mlines.Line2D([], [], color=color_dict[method], marker=marker_dict[method],
-                             markersize=ms, label=r'\textbf{%s}' % method.replace('_', '-'))
+                             markersize=ms, label=label_name)
         handles.append(line)
         # ax.fill_between(x, mean_t+variance_t, mean_t-variance_t, alpha=0.5)
         print(method, (y_mean[-1], y_var[-1]))
@@ -101,8 +102,11 @@ if __name__ == "__main__":
     ax.set_xlabel('\\textbf{wall clock time [s]}', fontsize=18)
     ax.set_ylabel('\\textbf{average validation error}', fontsize=18)
 
-    # TODO: FOR EACH BENCHMARK, THE FOLLOWING TWO SETTINGS SHOULD BE CUSTOMIZED.
-    ax.set_ylim(0.06, .14)
-    plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
+    # TODO: For each benchmark, the following two settings should be customized.
+    if benchmark_id == 'fcnet':
+        ax.set_ylim(0.06, .14)
+        plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
+    else:
+        raise ValueError('Unsupported benchmark name: %s!' % benchmark_id)
     plt.savefig('data/%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
     plt.show()
