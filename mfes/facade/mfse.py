@@ -187,7 +187,8 @@ class MFSE(BaseFacade):
             config_candidates = expand_configurations(config_candidates, self.config_space, num_config)
         return config_candidates
 
-    def calculate_ranking_loss(self, y_pred, y_true):
+    @staticmethod
+    def calculate_ranking_loss(y_pred, y_true):
         length = len(y_pred)
         y_pred = np.reshape(y_pred, -1)
         y_pred1 = np.tile(y_pred, (length, 1))
@@ -201,7 +202,7 @@ class MFSE(BaseFacade):
         return loss
 
     @staticmethod
-    def calculate_preserving_order_num(self, y_pred, y_true):
+    def calculate_preserving_order_num(y_pred, y_true):
         array_size = len(y_pred)
         assert len(y_true) == array_size
 
@@ -230,7 +231,7 @@ class MFSE(BaseFacade):
                 if i != K - 1:
                     mean, var = self.weighted_surrogate.surrogate_container[r].predict(test_x)
                     tmp_y = np.reshape(mean, -1)
-                    preorder_num, pair_num = self.calculate_preserving_order_num(tmp_y, test_y)
+                    preorder_num, pair_num = MFSE.calculate_preserving_order_num(tmp_y, test_y)
                     preserving_order_p.append(preorder_num/pair_num)
                     preserving_order_nums.append(preorder_num)
                 else:
@@ -248,7 +249,7 @@ class MFSE(BaseFacade):
                             _surrogate.train(train_configs, train_y)
                             pred, _ = _surrogate.predict(valid_configs)
                             cv_pred[valid_idx] = pred.reshape(-1)
-                        preorder_num, pair_num = self.calculate_preserving_order_num(cv_pred, test_y)
+                        preorder_num, pair_num = MFSE.calculate_preserving_order_num(cv_pred, test_y)
                         preserving_order_p.append(preorder_num / pair_num)
                         preserving_order_nums.append(preorder_num)
 
@@ -279,7 +280,7 @@ class MFSE(BaseFacade):
                 # For basic surrogate i=1:K-1.
                 for idx in range(K - 1):
                     sampled_y = np.random.normal(mean_list[idx], var_list[idx])
-                    _num, _ = self.calculate_preserving_order_num(sampled_y, test_y)
+                    _num, _ = MFSE.calculate_preserving_order_num(sampled_y, test_y)
                     order_preseving_nums.append(_num)
 
                 fold_num = 5
@@ -299,7 +300,7 @@ class MFSE(BaseFacade):
                         _pred, _var = _surrogate.predict(valid_configs)
                         sampled_pred = np.random.normal(_pred.reshape(-1), _var.reshape(-1))
                         cv_pred[valid_idx] = sampled_pred
-                    _num, _ = self.calculate_preserving_order_num(cv_pred, test_y)
+                    _num, _ = MFSE.calculate_preserving_order_num(cv_pred, test_y)
                     order_preseving_nums.append(_num)
                 max_id = np.argmax(order_preseving_nums)
                 min_probability_array[max_id] += 1
@@ -343,7 +344,7 @@ class MFSE(BaseFacade):
                 ensemble_means = x @ (means / vars) * ensemble_vars
                 ensemble_means = np.reshape(ensemble_means, -1)
                 self.logger.info("Loss:" + str(x))
-                return self.calculate_ranking_loss(ensemble_means, test_y)
+                return MFSE.calculate_ranking_loss(ensemble_means, test_y)
 
             constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
                            {'type': 'ineq', 'fun': lambda x: x - 0},
