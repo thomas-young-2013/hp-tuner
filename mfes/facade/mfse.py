@@ -260,7 +260,8 @@ class MFSE(BaseFacade):
                 new_weights = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))
             elif self.weight_method == 'rank_loss_p_norm':
                 trans_order_weight = np.array(preserving_order_p)
-                new_weights = trans_order_weight ^ self.power_num / np.sum(trans_order_weight ^ self.power_num)
+                power_sum = np.sum(np.power(trans_order_weight, self.power_num))
+                new_weights = np.power(trans_order_weight, self.power_num) / power_sum
             else:
                 _idx = np.argmax(np.array(preserving_order_nums))
                 new_weights = [0.] * K
