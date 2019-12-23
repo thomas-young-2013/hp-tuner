@@ -333,12 +333,13 @@ class MFSE(BaseFacade):
                 ensemble_vars = 1 / (x @ (1 / vars))
                 ensemble_means = x @ (means / vars) * ensemble_vars
                 ensemble_means = np.reshape(ensemble_means, -1)
+                self.logger.info("Loss:" + str(x))
                 return self.calculate_ranking_loss(ensemble_means, test_y)
 
             constraints = [{'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
                            {'type': 'ineq', 'fun': lambda x: x - 0},
                            {'type': 'ineq', 'fun': lambda x: 1 - x}]
-            res = minimize(min_func, np.array([1 / len(r_list)] * len(r_list)), constraints=constraints)
+            res = minimize(min_func, np.array([1e-8] * K), constraints=constraints)
             new_weights = res.x
         else:
             raise ValueError('Invalid weight method: %s!' % self.weight_method)
