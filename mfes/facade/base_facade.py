@@ -5,6 +5,7 @@ import os
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 from matplotlib import pyplot as plt
+from mfes.utils.logging_utils import get_logger, setup_logger
 
 plt.switch_backend('agg')
 
@@ -19,19 +20,13 @@ def evaluate_func(params):
 
 
 class BaseFacade(object):
-    def __init__(self, objective_func, n_workers=1, restart_needed=False, need_lc=False, method_name='Mth'):
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(level=logging.INFO)
-        handler = logging.FileHandler("logs/log_%s.txt" % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-        handler.setLevel(logging.INFO)
-        # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        formatter = logging.Formatter('%(message)s')
-        handler.setFormatter(formatter)
+    def __init__(self, objective_func, n_workers=1,
+                 restart_needed=False, need_lc=False, method_name='Mth', log_directory='logs'):
+        self.log_directory = log_directory
+        if not os.path.exists(self.log_directory):
+            os.makedirs(self.log_directory)
 
-        console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
-        self.logger.addHandler(handler)
-        self.logger.addHandler(console)
+        self.logger = self._get_logger("%s-%s" % (__class__.__name__, method_name))
 
         self.objective_func = dill.dumps(objective_func)
         self.trial_statistics = []
@@ -213,3 +208,8 @@ class BaseFacade(object):
         plt.xlabel('Time elapsed (sec)')
         plt.ylabel('Validation error')
         plt.savefig("data/%s.png" % self.method_name)
+
+    def _get_logger(self, name):
+        logger_name = 'mfes_%s' % name
+        setup_logger(os.path.join(self.log_directory, '%s.log' % str(logger_name)), None)
+        return get_logger(logger_name)
