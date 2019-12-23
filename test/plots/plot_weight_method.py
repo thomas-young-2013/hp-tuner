@@ -25,6 +25,7 @@ parser.add_argument('--benchmark', type=str,
 parser.add_argument('--methods', type=str, default='rank_loss_softmax,rank_loss_single,rank_loss_prob,opt_based')
 parser.add_argument('--n', type=int, default=1)
 parser.add_argument('--runtime_limit', type=int, default=7200)
+parser.add_argument('--start_id', type=int, default=0)
 parser.add_argument('--rep_num', type=int, default=5)
 args = parser.parse_args()
 
@@ -33,7 +34,7 @@ n_worker = args.n
 runtime_limit = args.runtime_limit
 methods = args.methods.split(',')
 rep_num = args.rep_num
-
+start_id = args.start_id
 color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
 
 
@@ -79,17 +80,17 @@ if __name__ == "__main__":
 
     for idx, method in enumerate(methods):
         array_list = []
-        for i in range(1, rep_num + 1):
-            filename = "eval-w_%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
+        for i in range(start_id, start_id + rep_num):
+            filename = "eval-w_%s-%s-%d-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker, 2)
             path = os.path.join("data", filename)
             array = np.load(path)
             array_list.append(array)
         x, y_mean, y_var = create_plot_points(array_list, 1, runtime_limit, point_num=n_points)
-        ax.plot(x, y_mean, lw=lw, label=method, color=color_list[method],
+        ax.plot(x, y_mean, lw=lw, label=r'\textbf{%s}' % method.replace('_', '-'), color=color_dict[method],
                 marker=marker_dict[method], markersize=ms, markevery=me)
 
         line = mlines.Line2D([], [], color=color_dict[method], marker=marker_dict[method],
-                             markersize=ms, label=r'\textbf{%s}' % method)
+                             markersize=ms, label=r'\textbf{%s}' % method.replace('_', '-'))
         handles.append(line)
         # ax.fill_between(x, mean_t+variance_t, mean_t-variance_t, alpha=0.5)
         print(method, (y_mean[-1], y_var[-1]))
@@ -100,7 +101,8 @@ if __name__ == "__main__":
     ax.set_xlabel('\\textbf{wall clock time [s]}', fontsize=18)
     ax.set_ylabel('\\textbf{average validation error}', fontsize=18)
 
-    ax.set_ylim(0., 1.)
+    # TODO: FOR EACH BENCHMARK, THE FOLLOWING TWO SETTINGS SHOULD BE CUSTOMIZED.
+    ax.set_ylim(0.06, .14)
     plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
     plt.savefig('data/%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
     plt.show()
