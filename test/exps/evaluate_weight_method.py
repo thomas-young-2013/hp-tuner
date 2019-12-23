@@ -11,14 +11,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
                     choices=['fcnet', 'resnet', 'xgb'],
                     default='fcnet')
-parser.add_argument('--methods', type=str, default='rank_loss_p_norm,rank_loss_softmax,rank_loss_single,rank_loss_prob,opt_based')
+parser.add_argument('--methods', type=str, default='rank_loss_p_norm-2,rank_loss_softmax,rank_loss_single,rank_loss_prob,opt_based')
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=1)
 parser.add_argument('--hb_iter', type=int, default=20000)
 parser.add_argument('--runtime_limit', type=int, default=7200)
 parser.add_argument('--rep_num', type=int, default=1)
 parser.add_argument('--start_id', type=int, default=0)
-parser.add_argument('--power_num', type=int, choices=[1, 2, 3], default=2)
 parser.add_argument('--cuda_device', type=str, default='0')
 args = parser.parse_args()
 
@@ -49,8 +48,13 @@ else:
 
 def evaluate_weight_learning(method, cs, id):
     _seed = seeds[id]
-    power_num = args.power_num
     method_name = "eval-w_%s-%s-%d-%d-%d-%d" % (method, benchmark_id, id, runtime_limit, n_worker, power_num)
+
+    power_num = 0
+    if method.startswith('rank_loss_p_norm'):
+        method, power_num = method.split('-')
+        power_num = int(power_num)
+        assert power_num in [1, 2, 3]
 
     optimizer = MFSE(cs, train, maximal_iter,
                      weight_method=method,

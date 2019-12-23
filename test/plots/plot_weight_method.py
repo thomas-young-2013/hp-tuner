@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
                     choices=['fcnet', 'resnet', 'xgb'],
                     default='fcnet')
-parser.add_argument('--methods', type=str, default='rank_loss_softmax,rank_loss_single,rank_loss_prob,opt_based')
+parser.add_argument('--methods', type=str, default='rank_loss_p_norm,rank_loss_softmax,rank_loss_single,rank_loss_prob')
 parser.add_argument('--n', type=int, default=1)
 parser.add_argument('--runtime_limit', type=int, default=7200)
 parser.add_argument('--start_id', type=int, default=0)
