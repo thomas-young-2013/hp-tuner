@@ -48,7 +48,7 @@ else:
 
 def evaluate_weight_learning(method, cs, id):
     _seed = seeds[id]
-    method_name = "eval-w_%s-%s-%d-%d-%d-%d" % (method, benchmark_id, id, runtime_limit, n_worker, power_num)
+    method_name = "eval-w_%s-%s-%d-%d-%d" % (method, benchmark_id, id, runtime_limit, n_worker)
 
     power_num = 0
     if method.startswith('rank_loss_p_norm'):
