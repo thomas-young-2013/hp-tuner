@@ -20,10 +20,9 @@ class MFSE(BaseFacade):
     def __init__(self, config_space: ConfigurationSpace, objective_func, R,
                  num_iter=10000, eta=3, p=0.3, n_workers=1, random_state=1,
                  init_weight=None, update_enable=True,
-                 weight_method='rank_loss_softmax', fusion_method='gpoe'):
+                 weight_method='rank_loss_softmax', fusion_method='gpoe', power_num=2):
         BaseFacade.__init__(self, objective_func, n_workers=n_workers)
         self.config_space = config_space
-        self.p = p
         self.R = R
         self.eta = eta
         self.seed = random_state
@@ -33,6 +32,8 @@ class MFSE(BaseFacade):
         self.num_iter = num_iter
         self.update_enable = update_enable
         self.fusion_method = fusion_method
+        # Parameter for weight method `rank_loss_p_norm`.
+        self.power_num = power_num
         # Specify the weight learning method.
         self.weight_method = weight_method
         self.config_space.seed(self.seed)
@@ -198,7 +199,8 @@ class MFSE(BaseFacade):
         loss = np.sum(np.log(1 + np.exp(-diff)) * y_mask) / length
         return loss
 
-    def calculate_preserving_order_num(self, y_pred, y_true, preserve_order=True):
+    @staticmethod
+    def calculate_preserving_order_num(self, y_pred, y_true):
         array_size = len(y_pred)
         assert len(y_true) == array_size
 
@@ -208,10 +210,7 @@ class MFSE(BaseFacade):
                 if not ((y_true[idx] > y_true[inner_idx]) ^ (y_pred[idx] > y_pred[inner_idx])):
                     order_preserving_num += 1
                 total_pair_num += 1
-        if preserve_order:
-            return order_preserving_num
-        else:
-            return total_pair_num - order_preserving_num
+        return order_preserving_num, total_pair_num
 
     def update_weight(self):
         max_r = self.iterate_r[-1]
@@ -222,19 +221,23 @@ class MFSE(BaseFacade):
         # Get previous weights
         r_list = self.weighted_surrogate.surrogate_r
         K = len(r_list)
-        if self.weight_method in ['rank_loss_softmax', 'rank_loss_single']:
+        if self.weight_method in ['rank_loss_softmax', 'rank_loss_single', 'rank_loss_p_norm']:
+            preserving_order_p = list()
             preserving_order_nums = list()
             for i, r in enumerate(r_list):
+                fold_num = 5
                 if i != K - 1:
                     mean, var = self.weighted_surrogate.surrogate_container[r].predict(test_x)
                     tmp_y = np.reshape(mean, -1)
-                    preserving_order_nums.append(self.calculate_preserving_order_num(tmp_y, test_y))
+                    preorder_num, pair_num = self.calculate_preserving_order_num(tmp_y, test_y)
+                    preserving_order_p.append(preorder_num/pair_num)
+                    preserving_order_nums.append(preorder_num)
                 else:
-                    if len(test_y) < 10:
-                        preserving_order_nums.append(0)
+                    if len(test_y) < 2*fold_num:
+                        preserving_order_p.append(0)
                     else:
                         # 5-fold cross validation.
-                        kfold = KFold(n_splits=5)
+                        kfold = KFold(n_splits=fold_num)
                         cv_pred = np.array([0] * len(test_y))
                         for train_idx, valid_idx in kfold.split(test_x):
                             train_configs, train_y = test_x[train_idx], test_y[train_idx]
@@ -244,19 +247,22 @@ class MFSE(BaseFacade):
                             _surrogate.train(train_configs, train_y)
                             pred, _ = _surrogate.predict(valid_configs)
                             cv_pred[valid_idx] = pred.reshape(-1)
-                        _num = self.calculate_preserving_order_num(cv_pred, test_y)
-                        preserving_order_nums.append(_num)
+                        preorder_num, pair_num = self.calculate_preserving_order_num(cv_pred, test_y)
+                        preserving_order_p.append(preorder_num / pair_num)
+                        preserving_order_nums.append(preorder_num)
 
-            order_weight = np.array(np.sqrt(preserving_order_nums))
-            trans_order_weight = order_weight - np.max(order_weight)
             if self.weight_method == 'rank_loss_softmax':
+                order_weight = np.array(np.sqrt(preserving_order_nums))
+                trans_order_weight = order_weight - np.max(order_weight)
                 # Softmax mapping.
                 new_weights = np.exp(trans_order_weight) / sum(np.exp(trans_order_weight))
+            elif self.weight_method == 'rank_loss_p_norm':
+                trans_order_weight = np.array(preserving_order_p)
+                new_weights = trans_order_weight ^ self.power_num / np.sum(trans_order_weight ^ self.power_num)
             else:
-                _idx = np.argmax(trans_order_weight)
-                new_weights = [0.] * len(trans_order_weight)
+                _idx = np.argmax(np.array(preserving_order_nums))
+                new_weights = [0.] * K
                 new_weights[_idx] = 1.
-
         elif self.weight_method == 'rank_loss_prob':
             # For basic surrogate i=1:K-1.
             mean_list, var_list = list(), list()
@@ -272,15 +278,16 @@ class MFSE(BaseFacade):
                 # For basic surrogate i=1:K-1.
                 for idx in range(K - 1):
                     sampled_y = np.random.normal(mean_list[idx], var_list[idx])
-                    _num = self.calculate_preserving_order_num(sampled_y, test_y)
+                    _num, _ = self.calculate_preserving_order_num(sampled_y, test_y)
                     order_preseving_nums.append(_num)
 
+                fold_num = 5
                 # For basic surrogate i=K. cv
-                if len(test_y) < 10:
+                if len(test_y) < 2 * fold_num:
                     order_preseving_nums.append(0)
                 else:
                     # 5-fold cross validation.
-                    kfold = KFold(n_splits=5)
+                    kfold = KFold(n_splits=fold_num)
                     cv_pred = np.array([0] * len(test_y))
                     for train_idx, valid_idx in kfold.split(test_x):
                         train_configs, train_y = test_x[train_idx], test_y[train_idx]
@@ -288,9 +295,10 @@ class MFSE(BaseFacade):
                         types, bounds = get_types(self.config_space)
                         _surrogate = RandomForestWithInstances(types=types, bounds=bounds)
                         _surrogate.train(train_configs, train_y)
-                        pred, _ = _surrogate.predict(valid_configs)
-                        cv_pred[valid_idx] = pred.reshape(-1)
-                    _num = self.calculate_preserving_order_num(cv_pred, test_y)
+                        _pred, _var = _surrogate.predict(valid_configs)
+                        sampled_pred = np.random.normal(_pred.reshape(-1), _var.reshape(-1))
+                        cv_pred[valid_idx] = sampled_pred
+                    _num, _ = self.calculate_preserving_order_num(cv_pred, test_y)
                     order_preseving_nums.append(_num)
                 max_id = np.argmax(order_preseving_nums)
                 min_probability_array[max_id] += 1
