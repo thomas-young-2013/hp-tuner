@@ -1,10 +1,22 @@
-import numpy as np
 import os
-import matplotlib.pyplot as plt
 import argparse
-import sys
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import matplotlib.lines as mlines
+import seaborn as sns
+sns.set_style(style='whitegrid')
+
+plt.rc('text', usetex=True)
+plt.rc('font', size=12.0, family='Times New Roman')
+plt.rcParams['figure.figsize'] = (8.0, 4.0)
+plt.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
+plt.rcParams["legend.frameon"] = True
+plt.rcParams["legend.facecolor"] = 'white'
+plt.rcParams["legend.edgecolor"] = 'black'
+plt.rc('legend', **{'fontsize': 12})
+
 plt.switch_backend('agg')
-sys.path.append(os.getcwd())
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
@@ -24,21 +36,71 @@ rep_num = args.rep_num
 
 color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
 
+
+def create_point(x, stats):
+    perf_list = []
+    for func in stats:
+        timestamp, perf = func
+        last_p = 1.0
+        for t, p in zip(timestamp, perf):
+            if t > x:
+                break
+            last_p = p
+        perf_list.append(last_p)
+    return perf_list
+
+
+def create_plot_points(data, start_time, end_time, point_num=500):
+    x = np.linspace(start_time, end_time, num=point_num)
+    _mean, _var = list(), list()
+    for i, stage in enumerate(x):
+        perf_list = create_point(stage, data)
+        _mean.append(np.mean(perf_list))
+        _var.append(np.std(perf_list))
+    # Used to plot errorbar.
+    return x, np.array(_mean), np.array(_var)
+
+
 if __name__ == "__main__":
-    for idx,method in enumerate(methods):
+    handles = list()
+    fig, ax = plt.subplots()
+    n_points = 300
+    lw = 2
+    ms = 4
+    me = 10
+
+    # Assign the color and marker to each method.
+    color_list = ['royalblue', 'purple', 'brown', 'green', 'red', 'orange', 'yellowgreen']
+    markers = ['^', 's', 'v', 'o', '*', 'p', '2']
+    color_dict, marker_dict = dict(), dict()
+    for i, item in enumerate(sorted(methods)):
+        color_dict[item] = color_list[i]
+        marker_dict[item] = markers[i]
+
+    for idx, method in enumerate(methods):
         array_list = []
         for i in range(1, rep_num + 1):
             filename = "eval-w_%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
             path = os.path.join("data", filename)
             array = np.load(path)
-            interp_array = [np.interp(j, array[0], array[1]) for j in range(1, runtime_limit)]
-            array_list.append(interp_array)
-        array_list = np.average(np.array(array_list), axis=0)
-        cut_start = 350
-        x = np.linspace(cut_start, runtime_limit - 1, runtime_limit - 1 - cut_start)
-        plt.xlabel("Time(s)")
-        plt.ylabel("Valid Error")
-        plt.plot(x, array_list[cut_start:], color=color_list[idx], label=method)
+            array_list.append(array)
+        x, y_mean, y_var = create_plot_points(array_list, 1, runtime_limit, point_num=n_points)
+        ax.plot(x, y_mean, lw=lw, label=method, color=color_list[method],
+                marker=marker_dict[method], markersize=ms, markevery=me)
 
-    plt.legend()
-    plt.savefig("plot/Average.png")
+        line = mlines.Line2D([], [], color=color_dict[method], marker=marker_dict[method],
+                             markersize=ms, label=r'\textbf{%s}' % method)
+        handles.append(line)
+        # ax.fill_between(x, mean_t+variance_t, mean_t-variance_t, alpha=0.5)
+        print(method, (y_mean[-1], y_var[-1]))
+
+    ax.set_xlim(1, runtime_limit)
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(runtime_limit // 10))
+    legend = ax.legend(handles=handles, loc='best', ncol=2)
+    ax.set_xlabel('\\textbf{wall clock time [s]}', fontsize=18)
+    ax.set_ylabel('\\textbf{average validation error}', fontsize=18)
+
+    ax.set_ylim(0., 1.)
+    plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
+    plt.savefig('data/%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
+    plt.show()

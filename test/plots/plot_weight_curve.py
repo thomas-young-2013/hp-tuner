@@ -25,7 +25,6 @@ method = args.method
 idx = args.id
 
 
-
 if __name__ == "__main__":
     filename = "eval-w_%s-%s-%d-%d-%d_weights_eval-w_%s-%s-%d-%d-%d.npy" % (
         method, benchmark_id, idx, runtime_limit, n_worker,

@@ -19,7 +19,9 @@ parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=1)
 parser.add_argument('--hb_iter', type=int, default=20000)
 parser.add_argument('--runtime_limit', type=int, default=7200)
+parser.add_argument('--start_id', type=int, default=0)
 parser.add_argument('--rep_num', type=int, default=5)
+parser.add_argument('--cuda_device', type=str, default='2')
 args = parser.parse_args()
 
 benchmark_id = args.benchmark
@@ -29,11 +31,12 @@ n_worker = args.n
 runtime_limit = args.runtime_limit
 baselines = args.baseline.split(',')
 rep_num = args.rep_num
+start_id = args.start_id
 print('training params: R-%d | iter-%d | workers-%d' % (maximal_iter, iter_num, n_worker))
 
 # Generate random seeds.
 np.random.seed(1)
-seeds = np.random.randint(low=1, high=10000, size=rep_num)
+seeds = np.random.randint(low=1, high=10000, size=start_id+rep_num)
 
 # Load evaluation objective according to benchmark name.
 if benchmark_id == 'fcnet':
@@ -76,9 +79,9 @@ def evaluate_baseline(baseline_id, cs, id):
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICE"] = '2'
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda_device
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = '2'
     cs = get_benchmark_configspace(benchmark_id)
-    for _id in range(rep_num):
+    for _id in range(start_id, start_id + rep_num):
         for _baseline in baselines:
             evaluate_baseline(_baseline, cs, _id)

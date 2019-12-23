@@ -11,13 +11,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
                     choices=['fcnet', 'resnet', 'xgb'],
                     default='fcnet')
-parser.add_argument('--methods', type=str, default='rank_loss_softmax,rank_loss_single,rank_loss_prob,opt_based')
+parser.add_argument('--methods', type=str, default='rank_loss_n_norm,rank_loss_softmax,rank_loss_single,rank_loss_prob,opt_based')
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=1)
 parser.add_argument('--hb_iter', type=int, default=20000)
 parser.add_argument('--runtime_limit', type=int, default=7200)
-parser.add_argument('--rep_num', type=int, default=5)
-parser.add_argument('--id', type=int, default=0)
+parser.add_argument('--rep_num', type=int, default=1)
+parser.add_argument('--start_id', type=int, default=0)
+parser.add_argument('--power_num', type=int, choices=[1, 2, 3], default=2)
+parser.add_argument('--cuda_device', type=str, default='0')
 args = parser.parse_args()
 
 benchmark_id = args.benchmark
@@ -27,12 +29,12 @@ n_worker = args.n
 runtime_limit = args.runtime_limit
 methods = args.methods.split(',')
 rep_num = args.rep_num
-idx = args.id
+start_id = args.start_id
 print('training params: R-%d | iter-%d | workers-%d' % (maximal_iter, iter_num, n_worker))
 
 # Generate random seeds.
 np.random.seed(1)
-seeds = np.random.randint(low=1, high=10000, size=5000)
+seeds = np.random.randint(low=1, high=10000, size=start_id+rep_num)
 
 # Load evaluation objective according to benchmark name.
 if benchmark_id == 'fcnet':
@@ -56,8 +58,9 @@ def evaluate_weight_learning(method, cs, id):
 
     if benchmark_id == 'xgb':
         optimizer.restart_needed = True
+    power_num = args.power_num
     optimizer.runtime_limit = runtime_limit
-    method_name = "eval-w_%s-%s-%d-%d-%d" % (method, benchmark_id, id, runtime_limit, n_worker)
+    method_name = "eval-w_%s-%s-%d-%d-%d-%d" % (method, benchmark_id, id, runtime_limit, n_worker, power_num)
     optimizer.set_method_name(method_name)
     optimizer.run()
     print(optimizer.get_incumbent(5))
@@ -65,8 +68,9 @@ def evaluate_weight_learning(method, cs, id):
 
 
 if __name__ == "__main__":
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda_device
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     cs = get_benchmark_configspace(benchmark_id)
-    for _method in methods:
-        evaluate_weight_learning(_method, cs, idx)
+    for idx in range(start_id, start_id + rep_num):
+        for _method in methods:
+            evaluate_weight_learning(_method, cs, idx)
