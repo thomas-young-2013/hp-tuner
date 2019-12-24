@@ -158,6 +158,7 @@ class BaseFacade(object):
         data_dir = 'data/models'
         # filelist = [f for f in os.listdir(data_dir) if f.startswith("convnet") or f.startswith('checkpoint')]
         filelist = [f for f in os.listdir(data_dir) if f.startswith(self.method_name)]
+        self.logger.info('Remove the following files: %s' % str(filelist))
         for f in filelist:
             os.remove(os.path.join(data_dir, f))
 
