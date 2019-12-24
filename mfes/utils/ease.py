@@ -2,6 +2,7 @@ import os
 from mfes.config_space.util import get_configuration_id
 import hashlib
 
+
 def ease_target(*dargs, **dkargs):
     # get model dir.
     model_dir = './data/models'
@@ -22,6 +23,7 @@ def ease_target(*dargs, **dkargs):
             params = args[1]
             conf_cp = params.copy()
             needed_lc = conf_cp['need_lc']
+            method_name = conf_cp['method_name']
             if 'reference' in params:
                 del conf_cp['reference']
             if 'need_lc' in params:
@@ -29,10 +31,10 @@ def ease_target(*dargs, **dkargs):
             conf_id = get_configuration_id(conf_cp)
             sha = hashlib.sha1(conf_id.encode('utf8'))
             conf_id = sha.hexdigest()
-            ref_model_path = model_dir + '%s_%s.ckpt' % (name, conf_id)
+            ref_model_path = model_dir + '%s_%s.ckpt' % (method_name, conf_id)
             model_path = ref_model_path
             if 'reference' in params:
-                ref_model_path = model_dir + '%s_%s.ckpt' % (name, params['reference'])
+                ref_model_path = model_dir + '%s_%s.ckpt' % (method_name, params['reference'])
             conf_cp['read_path'] = ref_model_path
             conf_cp['save_path'] = model_path
             conf_cp['need_lc'] = needed_lc

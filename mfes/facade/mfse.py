@@ -39,6 +39,7 @@ class MFSE(BaseFacade):
         self.weight_method = weight_method
         self.config_space.seed(self.seed)
         self.weight_update_id = 0
+        self.weight_changed_cnt = 0
 
         if init_weight is None:
             init_weight = [1. / (self.s_max + 1)] * (self.s_max + 1)
@@ -150,7 +151,7 @@ class MFSE(BaseFacade):
                 start_time = time.time()
                 self.iterate()
                 time_elapsed = (time.time() - start_time) / 60
-                self.logger.info("Iteration took %.2f min." % time_elapsed)
+                self.logger.info("%d/%d-Iteration took %.2f min." % (iter, self.num_iter, time_elapsed))
                 self.iterate_id += 1
                 self.save_intemediate_statistics()
         except Exception as e:
@@ -355,12 +356,13 @@ class MFSE(BaseFacade):
         else:
             raise ValueError('Invalid weight method: %s!' % self.weight_method)
 
-        self.logger.info('Updating weights: %s' % str(new_weights))
+        self.logger.info('[%s] %d-th Updating weights: %s' % (
+            self.weight_method, self.weight_changed_cnt, str(new_weights)))
 
         # Assign the weight to each basic surrogate.
         for i, r in enumerate(r_list):
             self.weighted_surrogate.surrogate_weight[r] = new_weights[i]
-
+        self.weight_changed_cnt += 1
         # Save the weight data.
         self.hist_weights.append(new_weights)
         np.save('data/%s_weights_%s.npy' % (self.method_name, self.method_name), np.asarray(self.hist_weights))

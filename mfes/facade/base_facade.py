@@ -21,7 +21,7 @@ def evaluate_func(params):
 
 class BaseFacade(object):
     def __init__(self, objective_func, n_workers=1,
-                 restart_needed=False, need_lc=False, method_name='Mth', log_directory='logs'):
+                 restart_needed=False, need_lc=False, method_name=None, log_directory='logs'):
         self.log_directory = log_directory
         if not os.path.exists(self.log_directory):
             os.makedirs(self.log_directory)
@@ -48,6 +48,9 @@ class BaseFacade(object):
         self.stage_history = {'stage_id': [], 'performance': []}
         self.grid_search_perf = []
 
+        if self.method_name is None:
+            raise ValueError('Method name must be specified! NOT NONE.')
+
     def set_restart(self):
         self.restart_needed = True
 
@@ -63,40 +66,6 @@ class BaseFacade(object):
         self._history['performance'].append(performance)
         self._history['best_trial_id'].append(trial_id)
         self._history['configuration'].append(config)
-
-    def run_in_parallel_easy(self, configuration_dicts, n_iteration):
-        n_configuration = len(configuration_dicts)
-        batch_size = self.num_workers
-        n_batch = n_configuration // batch_size + (1 if n_configuration % batch_size != 0 else 0)
-        performance_result = []
-        self.logger.info('total batch number: %d' % n_batch)
-        for i in range(n_batch):
-            start_time = time.time()
-            for config in configuration_dicts[i * batch_size: (i + 1) * batch_size]:
-                self.trial_statistics.append(self.pool.submit(evaluate_func,
-                                                              (self.objective_func, n_iteration,
-                                                               self.global_trial_counter, config)))
-                self.global_trial_counter += 1
-
-            # wait a batch of trials finish
-            self.wait_tasks_finish()
-
-            # get the evaluation statistics
-            for trial in self.trial_statistics:
-                assert (trial.done())
-                return_info, time_taken, trail_id, config = trial.result()
-
-                performance = return_info['loss'][-1]
-                if performance < self.global_incumbent:
-                    self.global_incumbent = performance
-                    self.global_incumbent_configuration = config
-
-                performance_result.append(return_info)
-                self.grid_search_perf.append(return_info['loss'])
-
-            self.trial_statistics.clear()
-            self.logger.info('evaluate %d-th batch: %.3f seconds' % (i, time.time() - start_time))
-        return performance_result
 
     def run_in_parallel(self, configurations, n_iteration, extra_info=None):
         n_configuration = len(configurations)
@@ -124,6 +93,7 @@ class BaseFacade(object):
             if extra_info is not None:
                 conf_dict['reference'] = extra_info[index]
             conf_dict['need_lc'] = self.record_lc
+            conf_dict['method_name'] = self.method_name
             conf_list.append(conf_dict)
 
         for i in range(n_batch):
@@ -187,10 +157,10 @@ class BaseFacade(object):
     def remove_immediate_model(self):
         data_dir = 'data/models'
         # filelist = [f for f in os.listdir(data_dir) if f.startswith("convnet") or f.startswith('checkpoint')]
-        filelist = [f for f in os.listdir(data_dir)]
+        filelist = [f for f in os.listdir(data_dir) if f.startswith(self.method_name)]
+        self.logger.info('Remove the following files: %s' % str(filelist))
         for f in filelist:
             os.remove(os.path.join(data_dir, f))
-        assert (len(os.listdir(data_dir)) == 0)
 
     def save_intemediate_statistics(self, save_stage=False):
         file_name = '%s.npy' % self.method_name

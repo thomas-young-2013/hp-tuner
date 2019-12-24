@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.lines as mlines
 import seaborn as sns
-
 sns.set_style(style='whitegrid')
 
 plt.rc('text', usetex=True)
