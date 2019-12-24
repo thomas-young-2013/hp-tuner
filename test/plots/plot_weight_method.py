@@ -16,13 +16,13 @@ plt.rcParams["legend.facecolor"] = 'white'
 plt.rcParams["legend.edgecolor"] = 'black'
 plt.rc('legend', **{'fontsize': 12})
 
-plt.switch_backend('agg')
+#plt.switch_backend('agg')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
                     choices=['fcnet', 'resnet', 'xgb'],
                     default='fcnet')
-parser.add_argument('--methods', type=str, default='rank_loss_p_norm,rank_loss_softmax,rank_loss_single,rank_loss_prob')
+parser.add_argument('--methods', type=str, default='rank_loss_p_norm-2,rank_loss_softmax,rank_loss_single,rank_loss_prob')
 parser.add_argument('--n', type=int, default=1)
 parser.add_argument('--runtime_limit', type=int, default=7200)
 parser.add_argument('--start_id', type=int, default=0)
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         array_list = []
         for i in range(start_id, start_id + rep_num):
             filename = "eval-w_%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
-            path = os.path.join("data", filename)
+            path = os.path.join("test", "samples", "numpy", filename)
             array = np.load(path)
             array_list.append(array)
         label_name = r'\textbf{%s}' % method.replace('_', '-')
@@ -108,5 +108,5 @@ if __name__ == "__main__":
         plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
     else:
         raise ValueError('Unsupported benchmark name: %s!' % benchmark_id)
-    plt.savefig('data/%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
+    plt.savefig('test/samples/png/%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
     plt.show()
