@@ -81,7 +81,7 @@ if __name__ == "__main__":
     for idx, method in enumerate(methods):
         array_list = []
         for i in range(start_id, start_id + rep_num):
-            filename = "eval-w_%s-%s-%d-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker, 2)
+            filename = "eval-w_%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
             path = os.path.join("data", filename)
             array = np.load(path)
             array_list.append(array)
