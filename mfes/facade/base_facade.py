@@ -157,10 +157,9 @@ class BaseFacade(object):
     def remove_immediate_model(self):
         data_dir = 'data/models'
         # filelist = [f for f in os.listdir(data_dir) if f.startswith("convnet") or f.startswith('checkpoint')]
-        filelist = [f for f in os.listdir(data_dir)]
+        filelist = [f for f in os.listdir(data_dir) if f.startswith(self.method_name)]
         for f in filelist:
             os.remove(os.path.join(data_dir, f))
-        assert (len(os.listdir(data_dir)) == 0)
 
     def save_intemediate_statistics(self, save_stage=False):
         file_name = '%s.npy' % self.method_name
