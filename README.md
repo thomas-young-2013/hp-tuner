@@ -17,7 +17,7 @@ Install necessary requirements:
 
 ### Experiments Design
 ##### Exp.1: compare different versions of MFES.
-Exp settings: runtime_limit=18000, n_worker=1.
+Exp settings: runtime_limit=18000, n_worker=1, rep=5.
 Execution scripts: `python test/exps/evaluate_weight_method.py --methods 'rank_loss_p_norm-2,rank_loss_p_norm-3,rank_loss_p_norm-1,rank_loss_single,rank_loss_prob' --rep 5 --runtime_limit 18000`
 
 | versions | type | details |
@@ -29,25 +29,25 @@ Execution scripts: `python test/exps/evaluate_weight_method.py --methods 'rank_l
 
 
 ##### Exp.2: Result comparison on FCNet-MNIST.
-Exp settings: runtime_limit=18000, n_worker=1.
+Exp settings: runtime_limit=18000, n_worker=1, rep=5.
 Compared methods: mfes-hb, hb, bohb, lcnet-hb, smac, smac-es, random_search.
 
 
 ##### Exp.3: Result comparison on RESNet-CIFAR10.
-Exp settings: runtime_limit=50000, n_worker=1.
+Exp settings: runtime_limit=50000, n_worker=1, rep=5.
 Compared methods: mfes-hb, hb, bohb, lcnet-hb, smac, smac-es, random_search.
 
 
 ##### Exp.4: Result comparison on RESNet-CIFAR100.
-Exp settings: runtime_limit=50000, n_worker=1.
+Exp settings: runtime_limit=50000, n_worker=1, rep=5.
 Compared methods: mfes-hb, hb, bohb, lcnet-hb, smac, smac-es, random_search.
 
 
 ##### Exp.5: Result comparison on XGBoost-Covtype.
-Exp settings: runtime_limit=27000, n_worker=1.
+Exp settings: runtime_limit=27000, n_worker=1, rep=5.
 Compared methods: mfes-hb, hb, bohb, tse, fabolas, smac, random_search.
 
 
 ##### Exp.6: Parallel version evaluations on ResNet-CIFAR10.
-Exp settings: runtime_limit=50000, n_worker=1.
+Exp settings: runtime_limit=50000, n_worker=1, rep=5.
 Compared methods: mfes-hb, hb, bohb, batch-bo, random_search.
