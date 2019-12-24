@@ -8,6 +8,7 @@ from mfes.utils.util_funcs import get_types
 from mfes.facade.base_facade import BaseFacade
 from mfes.config_space import ConfigurationSpace
 from mfes.acquisition_function.acquisition import EI
+from mfes.utils.util_funcs import minmax_normalization
 from mfes.config_space.util import expand_configurations
 from mfes.optimizer.random_sampling import RandomSampling
 from mfes.model.rf_with_instances import RandomForestWithInstances
@@ -139,6 +140,8 @@ class MFSE(BaseFacade):
             self.remove_immediate_model()
 
             for item in self.iterate_r[self.iterate_r.index(r):]:
+                # NORMALIZE Objective value: MinMax linear normalization
+                normalized_y = minmax_normalization(self.target_y[item])
                 self.weighted_surrogate.train(convert_configurations_to_array(self.target_x[item]),
                                               np.array(self.target_y[item], dtype=np.float64), r=item)
 
