@@ -110,3 +110,5 @@ conf
 logs
 plot
 /conf/
+.idea/
+
