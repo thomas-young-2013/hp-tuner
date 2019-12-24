@@ -88,7 +88,7 @@ class MFSE(BaseFacade):
             start_time = time.time()
             T = self.choose_next_weighted(n)
             time_elapsed = time.time() - start_time
-            self.logger.info("Choosing next configurations took %.2f sec." % time_elapsed)
+            self.logger.info("[%s] Choosing next configurations took %.2f sec." % (self.method_name, time_elapsed))
 
             extra_info = None
             last_run_num = None
@@ -143,7 +143,7 @@ class MFSE(BaseFacade):
                 # NORMALIZE Objective value: MinMax linear normalization
                 normalized_y = minmax_normalization(self.target_y[item])
                 self.weighted_surrogate.train(convert_configurations_to_array(self.target_x[item]),
-                                              np.array(self.target_y[item], dtype=np.float64), r=item)
+                                              np.array(normalized_y, dtype=np.float64), r=item)
 
     @BaseFacade.process_manage
     def run(self):
