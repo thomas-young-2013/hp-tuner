@@ -54,7 +54,7 @@ def evaluate_weight_learning(method, cs, id):
     if method.startswith('rank_loss_p_norm'):
         method, power_num = method.split('-')
         power_num = int(power_num)
-        assert power_num in [1, 2, 3]
+        assert power_num in [1, 2, 3, 4, 5]
 
     optimizer = MFSE(cs, train, maximal_iter,
                      weight_method=method,
