@@ -13,6 +13,7 @@ from mfes.facade.bo_es import SMAC_ES
 from mfes.facade.batch_bo import SMAC
 from mfes.facade.random_search import RandomSearch
 from mfes.facade.fabolas import FABOLAS
+from mfes.facade.tse import TSE
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
@@ -88,6 +89,8 @@ def evaluate_baseline(baseline_id, cs, id):
                                  random_state=_seed, method_id=method_name)
     elif baseline_id == 'fabolas':  # only for xgb R=27
         optimizer = FABOLAS(method_id=method_name)
+    elif baseline_id == 'tse':
+        optimizer = TSE(n_workers=n_worker, method_id=method_name)
     else:
         raise ValueError('Invalid baseline name: %s' % baseline_id)
 
