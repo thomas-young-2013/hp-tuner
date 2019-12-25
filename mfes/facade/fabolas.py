@@ -26,7 +26,7 @@ class FABOLAS(object):
         from mfes.evaluate_function.eval_xgb import load_covtype
         self.X, self.y = load_covtype()
         self.num_cls = 7
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(X, y, test_size=0.2)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.2)
         print('x_train shape:', self.x_train.shape)
         print('x_train shape:', self.x_test.shape)
 
