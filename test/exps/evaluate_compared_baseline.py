@@ -12,6 +12,7 @@ from mfes.facade.mbhb import MBHB
 from mfes.facade.bo_es import SMAC_ES
 from mfes.facade.batch_bo import SMAC
 from mfes.facade.random_search import RandomSearch
+from mfes.facade.fabolas import FABOLAS
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
@@ -85,6 +86,8 @@ def evaluate_baseline(baseline_id, cs, id):
     elif baseline_id == 'random_search':
         optimizer = RandomSearch(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_worker,
                                  random_state=_seed, method_id=method_name)
+    elif baseline_id == 'fabolas':  # only for xgb R=27
+        optimizer = FABOLAS(method_id=method_name)
     else:
         raise ValueError('Invalid baseline name: %s' % baseline_id)
 
