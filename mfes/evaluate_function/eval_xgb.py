@@ -24,7 +24,7 @@ x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 print('x_train shape:', x_train.shape)
 print('x_train shape:', x_test.shape)
 s_max = x_train.shape[0]
-resource_unit = s_max // 27
+resource_unit = s_max // 81  # R=81
 
 
 @ease_target(model_dir="./data/models", name='xgb')

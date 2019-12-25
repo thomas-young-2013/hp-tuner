@@ -17,9 +17,12 @@ from mfes.model.lcnet import LC_ES
 class SMAC_ES(BaseFacade):
 
     def __init__(self, config_space, objective_func, R,
-                 num_iter=10, n_workers=1, eta=3, es_gap=9, rho=0.7):
-        BaseFacade.__init__(self, objective_func, n_workers=n_workers, need_lc=True)
+                 num_iter=10, n_workers=1, eta=3, es_gap=9, rho=0.7,
+                 random_state=1, method_id="Default"):
+        BaseFacade.__init__(self, objective_func, n_workers=n_workers, need_lc=True, method_name=method_id)
+        self.seed = random_state
         self.config_space = config_space
+        self.config_space.seed(self.seed)
         self.R = R
         self.num_iter = num_iter
         self.eta = eta
@@ -32,7 +35,8 @@ class SMAC_ES(BaseFacade):
         self.surrogate = RandomForestWithInstances(types=types, bounds=bounds)
         self.acquisition_func = EI(model=self.surrogate)
         # TODO: add SMAC's optimization algorithm.
-        self.acq_optimizer = RandomSampling(self.acquisition_func, config_space, n_samples=max(500, 50*self.num_config))
+        self.acq_optimizer = RandomSampling(self.acquisition_func, config_space,
+                                            n_samples=max(500, 50 * self.num_config))
 
         self.incumbent_configs = []
         self.incumbent_obj = []
@@ -59,7 +63,7 @@ class SMAC_ES(BaseFacade):
                 lc_conf_mapping[conf_id] = item
 
             total_iter_num = self.R // self.early_stop_gap
-            for iter_num in range(1, 1+total_iter_num):
+            for iter_num in range(1, 1 + total_iter_num):
                 self.logger.info('start iteration gap %d' % iter_num)
                 ret_val, early_stops = self.run_in_parallel(T, self.early_stop_gap, extra_info)
                 val_losses = [item['loss'] for item in ret_val]
@@ -82,7 +86,7 @@ class SMAC_ES(BaseFacade):
                 if len(T) == 0:
                     break
 
-                if len(self.incumbent_obj) >= 2*self.num_config and iter_num != total_iter_num:
+                if len(self.incumbent_obj) >= 2 * self.num_config and iter_num != total_iter_num:
                     # learning curve based early stop strategy.
                     ref_list = extra_info
                     early_stops = self.stop_early(T)
@@ -108,7 +112,7 @@ class SMAC_ES(BaseFacade):
                         self.lc_training_x = np.concatenate((self.lc_training_x, x), 0)
                         self.lc_training_y = np.concatenate((self.lc_training_y, y), 0)
             self.logger.info('training data shape: %s' % str(self.lc_training_x.shape))
-            if len(self.incumbent_obj) >= 2*self.num_config and len(self.incumbent_obj) % self.num_config == 0:
+            if len(self.incumbent_obj) >= 2 * self.num_config and len(self.incumbent_obj) % self.num_config == 0:
                 self.lcnet_model.train(self.lc_training_x, self.lc_training_y)
 
             self.add_stage_history(self.stage_id, self.global_incumbent)
@@ -119,11 +123,11 @@ class SMAC_ES(BaseFacade):
     def run(self):
         try:
             for iter in range(self.num_iter):
-                self.logger.info('-'*50)
+                self.logger.info('-' * 50)
                 self.logger.info("SMAC with ES algorithm: %d/%d iteration starts" % (iter, self.num_iter))
                 start_time = time.time()
                 self.iterate()
-                time_elapsed = (time.time() - start_time)/60
+                time_elapsed = (time.time() - start_time) / 60
                 self.logger.info("iteration took %.2f min." % time_elapsed)
                 self.save_intemediate_statistics()
         except Exception as e:
@@ -145,7 +149,7 @@ class SMAC_ES(BaseFacade):
         m, v = self.lcnet_model.predict(x_test)
         best_accuracy = 1 - self.global_incumbent
         s = np.sqrt(v)
-        less_p = norm.cdf((best_accuracy-m)/s)
+        less_p = norm.cdf((best_accuracy - m) / s)
         self.logger.info('early stop prob: %s' % str(less_p))
         early_stop_flag = (less_p >= self.es_rho)
 
@@ -158,7 +162,7 @@ class SMAC_ES(BaseFacade):
         return early_stop_flag
 
     def choose_next(self, num_config):
-        if len(self.incumbent_obj) < 2*self.num_config:
+        if len(self.incumbent_obj) < 2 * self.num_config:
             return sample_configurations(self.config_space, num_config)
 
         # print('choose next starts!')
@@ -171,7 +175,7 @@ class SMAC_ES(BaseFacade):
         conf_cnt = 0
         total_cnt = 0
         next_configs = []
-        while conf_cnt < num_config and total_cnt < 5*num_config:
+        while conf_cnt < num_config and total_cnt < 5 * num_config:
             incumbent = dict()
             best_index = np.argmin(self.incumbent_obj)
             incumbent['obj'] = self.incumbent_obj[best_index]
@@ -188,7 +192,7 @@ class SMAC_ES(BaseFacade):
         return next_configs
 
     def get_incumbent(self, num_inc=1):
-        assert(len(self.incumbent_obj) == len(self.incumbent_configs))
+        assert (len(self.incumbent_obj) == len(self.incumbent_configs))
         indices = np.argsort(self.incumbent_obj)
         configs = [self.incumbent_configs[i] for i in indices[0:num_inc]]
         targets = [self.incumbent_obj[i] for i in indices[0: num_inc]]

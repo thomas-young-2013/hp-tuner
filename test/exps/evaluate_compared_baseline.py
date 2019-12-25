@@ -9,16 +9,19 @@ from mfes.facade.bohb import BOHB
 from mfes.facade.hb import Hyperband
 from mfes.facade.mfse import MFSE
 from mfes.facade.mbhb import MBHB
+from mfes.facade.bo_es import SMAC_ES
+from mfes.facade.batch_bo import SMAC
+from mfes.facade.random_search import RandomSearch
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
                     choices=['fcnet', 'resnet', 'xgb'],
                     default='fcnet')
-parser.add_argument('--baseline', type=str, default='hb,bohb,mfes')
+parser.add_argument('--baseline', type=str, default='hb,bohb,mfse')
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=1)
-parser.add_argument('--hb_iter', type=int, default=20000)
-parser.add_argument('--runtime_limit', type=int, default=7200)
+parser.add_argument('--hb_iter', type=int, default=50000)
+parser.add_argument('--runtime_limit', type=int, default=18000)
 parser.add_argument('--start_id', type=int, default=0)
 parser.add_argument('--rep_num', type=int, default=5)
 parser.add_argument('--cuda_device', type=str, default='2')
@@ -36,7 +39,7 @@ print('training params: R-%d | iter-%d | workers-%d' % (maximal_iter, iter_num, 
 
 # Generate random seeds.
 np.random.seed(1)
-seeds = np.random.randint(low=1, high=10000, size=start_id+rep_num)
+seeds = np.random.randint(low=1, high=10000, size=start_id + rep_num)
 
 # Load evaluation objective according to benchmark name.
 if benchmark_id == 'fcnet':
@@ -68,8 +71,20 @@ def evaluate_baseline(baseline_id, cs, id):
         optimizer = MBHB(cs, train, maximal_iter, num_iter=iter_num,
                          n_workers=n_worker, random_state=_seed, method_id=method_name)
     elif baseline_id == 'mfse':
-        optimizer = MFSE(cs, train, maximal_iter, num_iter=iter_num,
+        optimizer = MFSE(cs, train, maximal_iter, num_iter=iter_num, weight_method='rank_loss_p_norm',
+                         n_workers=n_worker, random_state=_seed, method_id=method_name, power_num=2)
+    elif baseline_id == 'smac':
+        optimizer = SMAC(cs, train, maximal_iter, num_iter=iter_num,
+                         n_workers=1, random_state=_seed, method_id=method_name)
+    elif baseline_id == 'batch_bo':
+        optimizer = SMAC(cs, train, maximal_iter, num_iter=iter_num,
                          n_workers=n_worker, random_state=_seed, method_id=method_name)
+    elif baseline_id == 'boes':
+        optimizer = SMAC_ES(cs, train, maximal_iter, num_iter=iter_num,
+                            n_workers=n_worker, random_state=_seed, method_id=method_name)
+    elif baseline_id == 'random_search':
+        optimizer = RandomSearch(cs, train, maximal_iter, num_iter=iter_num, n_workers=n_worker,
+                                 random_state=_seed, method_id=method_name)
     else:
         raise ValueError('Invalid baseline name: %s' % baseline_id)
 
