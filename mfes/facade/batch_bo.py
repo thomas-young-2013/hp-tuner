@@ -13,9 +13,11 @@ from mfes.facade.base_facade import BaseFacade
 class SMAC(BaseFacade):
 
     def __init__(self, config_space, objective_func, R,
-                 num_iter=10, n_workers=1, eta=3):
-        BaseFacade.__init__(self, objective_func, n_workers=n_workers)
+                 num_iter=10, n_workers=1, eta=3, random_state=1, method_id="Default"):
+        BaseFacade.__init__(self, objective_func, n_workers=n_workers, method_name=method_id)
         self.config_space = config_space
+        self.seed = random_state
+        self.config_space.seed(self.seed)
         self.R = R
         self.num_iter = num_iter
         self.eta = eta
@@ -28,13 +30,14 @@ class SMAC(BaseFacade):
         self.surrogate = RandomForestWithInstances(types=types, bounds=bounds)
         self.acquisition_func = EI(model=self.surrogate)
         # TODO: add SMAC's optimization algorithm.
-        self.acq_optimizer = RandomSampling(self.acquisition_func, config_space, n_samples=max(500, 50*self.num_config))
+        self.acq_optimizer = RandomSampling(self.acquisition_func, config_space,
+                                            n_samples=max(500, 50 * self.num_config))
 
         self.incumbent_configs = []
         self.incumbent_obj = []
 
     def iterate(self):
-        n_loop = int(ceil(1.0*self.inner_iteration_n/self.num_workers))
+        n_loop = int(ceil(1.0 * self.inner_iteration_n / self.num_workers))
         for _ in range(n_loop):
             T = self.choose_next(self.num_workers)
             extra_info = None
@@ -51,11 +54,11 @@ class SMAC(BaseFacade):
     def run(self):
         try:
             for iter in range(self.num_iter):
-                self.logger.info('-'*50)
+                self.logger.info('-' * 50)
                 self.logger.info("SMAC algorithm: %d/%d iteration starts" % (iter, self.num_iter))
                 start_time = time.time()
                 self.iterate()
-                time_elapsed = (time.time() - start_time)/60
+                time_elapsed = (time.time() - start_time) / 60
                 self.logger.info("iteration took %.2f min." % time_elapsed)
                 self.save_intemediate_statistics()
         except Exception as e:
@@ -65,7 +68,7 @@ class SMAC(BaseFacade):
             self.remove_immediate_model()
 
     def choose_next(self, num_config):
-        if len(self.incumbent_obj) < 2*self.num_config:
+        if len(self.incumbent_obj) < 2 * self.num_config:
             return sample_configurations(self.config_space, num_config)
 
         # print('choose next starts!')
@@ -78,7 +81,7 @@ class SMAC(BaseFacade):
         conf_cnt = 0
         total_cnt = 0
         next_configs = []
-        while conf_cnt < num_config and total_cnt < 5*num_config:
+        while conf_cnt < num_config and total_cnt < 5 * num_config:
             incumbent = dict()
             best_index = np.argmin(self.incumbent_obj)
             incumbent['obj'] = self.incumbent_obj[best_index]
@@ -95,7 +98,7 @@ class SMAC(BaseFacade):
         return next_configs
 
     def get_incumbent(self, num_inc=1):
-        assert(len(self.incumbent_obj) == len(self.incumbent_configs))
+        assert (len(self.incumbent_obj) == len(self.incumbent_configs))
         indices = np.argsort(self.incumbent_obj)
         configs = [self.incumbent_configs[i] for i in indices[0:num_inc]]
         targets = [self.incumbent_obj[i] for i in indices[0: num_inc]]
