@@ -1,3 +1,4 @@
+import numpy as np
 from mfes.evaluate_function.resnet.hyper_parameters import *
 
 BN_EPSILON = 0.001

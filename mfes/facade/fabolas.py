@@ -37,7 +37,7 @@ class FABOLAS(object):
     def objective_function(self, x, s):
         # Start the clock to determine the cost of this function evaluation
         start_time = time.time()
-
+        s = int(s)
         # Shuffle the data and split up the request subset of the training data
         s_max = self.y_train.shape[0]
         shuffle = np.random.permutation(np.arange(s_max))
