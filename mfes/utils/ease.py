@@ -28,7 +28,9 @@ def ease_target(*dargs, **dkargs):
                 del conf_cp['reference']
             if 'need_lc' in params:
                 del conf_cp['need_lc']
-            conf_id = get_configuration_id(conf_cp)
+            hash_cp = conf_cp.copy()
+            del hash_cp["method_name"]
+            conf_id = get_configuration_id(hash_cp)
             sha = hashlib.sha1(conf_id.encode('utf8'))
             conf_id = sha.hexdigest()
             ref_model_path = model_dir + '%s_%s.ckpt' % (method_name, conf_id)
@@ -43,5 +45,7 @@ def ease_target(*dargs, **dkargs):
             if 'ref_id' not in result:
                 result['ref_id'] = conf_id
             return result
+
         return dec
+
     return _dec
