@@ -82,7 +82,7 @@ if __name__ == "__main__":
         array_list = []
         for i in range(start_id, start_id + rep_num):
             filename = "eval-w_%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
-            path = os.path.join("test", "samples", "numpy", filename)
+            # path = os.path.join("test", "samples", "numpy", filename)
             array = np.load('data/%s' % filename)
             array_list.append(array)
         label_name = r'\textbf{%s}' % method.replace('_', '-')
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
     # TODO: For each benchmark, the following two settings should be customized.
     if benchmark_id == 'fcnet':
-        ax.set_ylim(0.07, .10)
+        ax.set_ylim(0.072, .085)
         plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
     else:
         raise ValueError('Unsupported benchmark name: %s!' % benchmark_id)
