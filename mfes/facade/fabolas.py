@@ -115,9 +115,12 @@ class FABOLAS(object):
         upper = np.array([0.9, 10, 12, 1, 10, 1, 10, 10])
 
         # Start Fabolas to optimize the objective function
-        results = fabolas(objective_function=self.objective_function, lower=lower, upper=upper,
-                          s_min=s_min, s_max=s_max, n_init=len(subsets), num_iterations=1000,
-                          n_hypers=30, subsets=subsets, output_path=self.output_path, inc_estimation="last_seen")
+        try:
+            results = fabolas(objective_function=self.objective_function, lower=lower, upper=upper,
+                              s_min=s_min, s_max=s_max, n_init=len(subsets), num_iterations=1000,
+                              n_hypers=30, subsets=subsets, output_path=self.output_path, inc_estimation="last_seen")
+        except ValueError as e:
+            print(e)
 
         exp_data = np.array([results['runtime'], results['y'].tolist()])
 

@@ -316,7 +316,8 @@ class TSE(object):
             plt.ylabel('validation error')
             plt.savefig("data/xgb/%s.png" % self.method_name)
             if time.time() - start_time > self.runtime_limit:
-                raise ValueError('Runtime budget meets!')
+                print('Runtime budget meets!')
+                break
 
         pool.shutdown(wait=True)
 
