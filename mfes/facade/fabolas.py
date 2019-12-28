@@ -122,9 +122,5 @@ class FABOLAS(object):
         except ValueError as e:
             print(e)
 
-        exp_data = np.array([results['runtime'], results['y'].tolist()])
-
-        np.save(self.output_path + 'exp_data_%d.npy', exp_data)
-
     def get_incumbent(self, num_inc=1):
         pass

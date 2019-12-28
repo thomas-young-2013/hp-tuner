@@ -43,7 +43,7 @@ class TSE(object):
         self.s_min = self.s_max // 27
         self.s_mid = self.s_max // 5
         self.num_init = 4
-        self.num_iter = 200
+        self.num_iter = 60
 
         self.K = 5
         self.iter_H = 500

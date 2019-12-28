@@ -17,7 +17,7 @@ plt.rcParams["legend.facecolor"] = 'white'
 plt.rcParams["legend.edgecolor"] = 'black'
 plt.rc('legend', **{'fontsize': 12})
 
-#plt.switch_backend('agg')
+# plt.switch_backend('agg')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
@@ -105,6 +105,9 @@ if __name__ == "__main__":
 
     # TODO: For each benchmark, the following two settings should be customized.
     if benchmark_id == 'fcnet':
+        ax.set_ylim(0.06, .14)
+        plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
+    elif benchmark_id == 'xgb':
         ax.set_ylim(0.06, .14)
         plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
     else:
