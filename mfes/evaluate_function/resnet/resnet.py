@@ -157,9 +157,10 @@ def residual_block(input_layer, output_channel, first_block=False, weight_decay=
     return output
 
 
-def inference(input_tensor_batch, n, reuse, weight_decay=0.0002):
+def inference(input_tensor_batch, n, reuse, weight_decay=0.0002,output_dim=10):
     '''
     The main function that defines the ResNet. total layers = 1 + 2n + 2n + 2n +1 = 6n + 2
+    :param output_dim: Output dim, 10 for Cifar-10 and 100 for Cifar-100
     :param weight_decay:
     :param input_tensor_batch: 4D tensor
     :param n: num_residual_blocks
@@ -202,7 +203,7 @@ def inference(input_tensor_batch, n, reuse, weight_decay=0.0002):
         global_pool = tf.reduce_mean(relu_layer, [1, 2])
 
         assert global_pool.get_shape().as_list()[-1:] == [64]
-        output = output_layer(global_pool, 10, weight_decay=weight_decay)
+        output = output_layer(global_pool, output_dim, weight_decay=weight_decay)
         layers.append(output)
 
     return layers[-1]

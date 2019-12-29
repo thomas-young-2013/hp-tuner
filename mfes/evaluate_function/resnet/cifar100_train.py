@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 import time
 from mfes.evaluate_function.resnet.resnet import *
-from mfes.evaluate_function.resnet.cifar10_input import *
+from mfes.evaluate_function.resnet.cifar100_input import *
 import pandas as pd
 
 
@@ -40,8 +40,8 @@ class Train(object):
         # Logits of training data and valiation data come from the same graph. The inference of
         # validation data share all the weights with train data. This is implemented by passing
         # reuse=True to the variable scopes of train graph
-        logits = inference(self.image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=False)
-        vali_logits = inference(self.vali_image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=True)
+        logits = inference(self.image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=False, output_dim=100)
+        vali_logits = inference(self.vali_image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=True, output_dim=100)
 
         # The following codes calculate the train loss, which is consist of the
         # softmax cross entropy and the relularization loss
@@ -62,6 +62,7 @@ class Train(object):
         self.val_op = self.validation_op(validation_step, self.vali_top1_error, self.vali_loss)
 
     def train(self, epoch_num, params, logger=None):
+        # TODO: Determine the resource unit
         epoch_num = int(epoch_num)
         print(epoch_num, params)
         self.padding_size = params['padding_size']
@@ -229,7 +230,7 @@ class Train(object):
                                                                               IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH])
 
         # Build the test graph
-        logits = inference(self.test_image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=False)
+        logits = inference(self.test_image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=False, output_dim=100)
         predictions = tf.nn.softmax(logits)
 
         # Initialize a new session and restore a checkpoint
@@ -256,7 +257,7 @@ class Train(object):
             self.test_image_placeholder = tf.placeholder(dtype=tf.float32, shape=[remain_images,
                                                                                   IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH])
             # Build the test graph
-            logits = inference(self.test_image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=True)
+            logits = inference(self.test_image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=True, output_dim=100)
             predictions = tf.nn.softmax(logits)
 
             test_image_batch = test_image_array[-remain_images:, ...]
