@@ -12,12 +12,12 @@ NUM_CLASS = 100
 TRAIN_RANDOM_LABEL = False  # Want to use random label for train data?
 VALI_RANDOM_LABEL = False  # Want to use random label for validation?
 
-EPOCH_SIZE = 45000
+EPOCH_SIZE = 40000
 
 (x_train, y_train), (x_test, y_test) = cifar100.load_data(label_mode='fine')
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
-x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=42)
+x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, random_state=42)
 
 
 def load_dataset(type='train'):

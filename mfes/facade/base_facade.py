@@ -1,5 +1,6 @@
 import logging
 import time
+import pickle as pkl
 import dill
 import os
 import numpy as np
@@ -167,7 +168,8 @@ class BaseFacade(object):
         x = np.array(self._history['time_elapsed'])
         y = np.array(self._history['performance'])
         np.save('data/%s' % file_name, np.array([x, y]))
-
+        with open('data/config_%s' % file_name, 'wb')as f:
+            pkl.dump(self.global_incumbent_configuration, f)
         if save_stage:
             stage_file_name = 'stage_%s.npy' % self.method_name
             stage_x = np.array(self.stage_history['stage_id'])

@@ -14,7 +14,7 @@ class Train(object):
         self.weight_decay = None
         self.lr_decay_factor = None
         self.padding_size = None
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.48)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.45)
         self.config = tf.ConfigProto(gpu_options=gpu_options)
 
     def placeholders(self):
@@ -304,7 +304,7 @@ class Train(object):
         :param vali_batch_size: int
         :return: 4D numpy array and 1D numpy array
         '''
-        offset = np.random.choice(5000 - vali_batch_size, 1)[0]
+        offset = np.random.choice(10000 - vali_batch_size, 1)[0]
         vali_data_batch = vali_data[offset:offset + vali_batch_size, ...]
         vali_label_batch = vali_label[offset:offset + vali_batch_size]
         return vali_data_batch, vali_label_batch
@@ -393,7 +393,7 @@ class Train(object):
         :param batch_label: 1D numpy array. training labels to feed the dict
         :return: float, float
         '''
-        VALID_SIZE = 5000
+        VALID_SIZE = 10000
         num_batches = VALID_SIZE // VALID_BATCH_SIZE
         order = np.random.choice(VALID_SIZE, num_batches * VALID_BATCH_SIZE)
         vali_data_subset = vali_data[order, ...]
