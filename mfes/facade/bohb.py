@@ -112,7 +112,9 @@ class BOHB(BaseFacade):
             self.remove_immediate_model()
 
     def choose_next(self, num_config):
-        if len(self.incumbent_obj) < 2 * self.num_config:
+        # if len(self.incumbent_obj) < 2 * self.num_config:
+        #     return sample_configurations(self.config_space, num_config)
+        if len(self.incumbent_obj) < 3:
             return sample_configurations(self.config_space, num_config)
         
         self.logger.info('Train feature is: %s' % str(self.incumbent_configs[:5]))
