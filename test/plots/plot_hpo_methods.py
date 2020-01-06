@@ -71,6 +71,10 @@ if __name__ == "__main__":
     ms = 4
     me = 10
 
+    if benchmark_id == 'xgb':
+        methods.remove('mbhb')
+        methods.remove('boes')
+        methods.extend(['fabolas', 'tse'])
     # Assign the color and marker to each method.
     color_list = ['royalblue', 'purple', 'brown', 'green', 'red', 'orange', 'yellowgreen', 'purple']
     markers = ['^', 's', 'v', 'o', '*', 'p', '2', 'x']
@@ -83,7 +87,7 @@ if __name__ == "__main__":
         array_list = []
         for i in range(start_id, start_id + rep_num):
             filename = "%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
-            path = os.path.join("data", filename)
+            path = os.path.join("test/samples/%s/" % benchmark_id, filename)
             array = np.load(path)
             array_list.append(array)
         label_name = r'\textbf{%s}' % method.replace('_', '-')
@@ -105,7 +109,7 @@ if __name__ == "__main__":
 
     # TODO: For each benchmark, the following two settings should be customized.
     if benchmark_id == 'fcnet':
-        ax.set_ylim(0.06, .14)
+        ax.set_ylim(0.073, .085)
         plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
     elif benchmark_id == 'xgb':
         ax.set_ylim(0.025, .08)
@@ -115,5 +119,5 @@ if __name__ == "__main__":
         plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
     else:
         raise ValueError('Unsupported benchmark name: %s!' % benchmark_id)
-    plt.savefig('test/samples/png/%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
+    plt.savefig('test/samples/figures/%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
     plt.show()
