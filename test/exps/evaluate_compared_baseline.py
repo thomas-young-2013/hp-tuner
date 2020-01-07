@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import numpy as np
+import pickle as pkl
 
 sys.path.append(os.getcwd())
 from mfes.evaluate_function.hyperparameter_space_utils import get_benchmark_configspace
@@ -50,14 +51,20 @@ elif benchmark_id == 'resnet':
     from mfes.evaluate_function.eval_resnet import train
 elif benchmark_id == 'xgb':
     from mfes.evaluate_function.eval_xgb import train
+elif benchmark_id == 'resnet_cifar100':
+    from mfes.evaluate_function.eval_resnet_cifar100 import train
 else:
     raise ValueError('Unsupported Ojbective function: %s' % benchmark_id)
 
 
-def evaluate_objective_function(cs):
-    conf = cs.get_default_configuration().get_dictionary()
-    conf['need_lc'] = False
-    print(train(1, conf, None))
+def evaluate_objective_function(baseline_id, id):
+    method_name = "%s-%s-%d-%d-%d" % (baseline_id, benchmark_id, id, runtime_limit, n_worker)
+    with open('data/config_%s.npy' % method_name, 'rb') as f:
+        conf = pkl.load(f)
+    from mfes.evaluate_function.eval_resnet import eval
+    result = eval(200, conf)
+    with open('data/result_%s.pkl' % method_name, 'wb') as f:
+        pkl.dump(result, f)
 
 
 def evaluate_baseline(baseline_id, cs, id):
@@ -110,3 +117,4 @@ if __name__ == "__main__":
     for _id in range(start_id, start_id + rep_num):
         for _baseline in baselines:
             evaluate_baseline(_baseline, cs, _id)
+            # evaluate_objective_function(_baseline, _id)

@@ -14,7 +14,7 @@ class Train(object):
         self.weight_decay = None
         self.lr_decay_factor = None
         self.padding_size = None
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.95)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.45)
         self.config = tf.ConfigProto(gpu_options=gpu_options)
 
     def placeholders(self):
@@ -77,8 +77,8 @@ class Train(object):
             self.placeholders()
             # For the first step, we are loading all training images and validation images into the
             # memory
-            all_data, all_labels = prepare_train_data(padding_size=self.padding_size)
-            vali_data, vali_labels = read_validation_data()
+            all_data, all_labels = prepare_all_data(padding_size=self.padding_size)
+            vali_data, vali_labels = read_test_data()
 
             # Build the graph for train and validation
             self.build_train_validation_graph()
