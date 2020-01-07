@@ -14,7 +14,7 @@ class Train(object):
         self.weight_decay = None
         self.lr_decay_factor = None
         self.padding_size = None
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.45)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.95)
         self.config = tf.ConfigProto(gpu_options=gpu_options)
 
     def placeholders(self):
