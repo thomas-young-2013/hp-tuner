@@ -82,8 +82,7 @@ if __name__ == "__main__":
         array_list = []
         for i in range(start_id, start_id + rep_num):
             filename = "eval-w_%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
-            # path = os.path.join("test", "samples", "numpy", filename)
-            array = np.load('data/%s' % filename)
+            array = np.load('test/samples/evaluation_exp/%s' % filename)
             array_list.append(array)
         label_name = r'\textbf{%s}' % method.replace('_', '-')
         x, y_mean, y_var = create_plot_points(array_list, 1, runtime_limit, point_num=n_points)
