@@ -102,11 +102,10 @@ if __name__ == "__main__":
     ax.set_xlabel('\\textbf{wall clock time [s]}', fontsize=18)
     ax.set_ylabel('\\textbf{average validation error}', fontsize=18)
 
-    # TODO: For each benchmark, the following two settings should be customized.
     if benchmark_id == 'fcnet':
         ax.set_ylim(0.072, .085)
         plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
     else:
         raise ValueError('Unsupported benchmark name: %s!' % benchmark_id)
-    plt.savefig('data/%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
+    plt.savefig('test/samples/figures/transfer_%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
     plt.show()
