@@ -57,7 +57,7 @@ def evaluate_weight_learning(method, cs, id):
         assert power_num in [1, 2, 3, 4, 5]
 
     init_weight, update_flag = None, True
-    if method_name == 'equal_weight':
+    if method == 'equal_weight':
         update_flag = False
         _n = 5
         init_weight = [1/_n] * _n

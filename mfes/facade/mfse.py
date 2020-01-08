@@ -48,7 +48,7 @@ class MFSE(BaseFacade):
         assert len(init_weight) == (self.s_max + 1)
         if self.weight_method == 'equal_weight':
             assert self.update_enable == False
-        self.logger.info('Weight update flag: %s' % str(self.update_enable))
+        self.logger.info('Weight method & flag: %s-%s' % (self.weight_method, str(self.update_enable)))
         self.logger.info("Initial weight is: %s" % init_weight[:self.s_max + 1])
         types, bounds = get_types(config_space)
         self.num_config = len(bounds)
