@@ -18,7 +18,7 @@ from mfes.facade.tse import TSE
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
-                    choices=['fcnet', 'resnet', 'xgb'],
+                    choices=['fcnet', 'resnet', 'xgb', 'convnet'],
                     default='fcnet')
 parser.add_argument('--baseline', type=str, default='hb,bohb,mfse')
 parser.add_argument('--R', type=int, default=81)
@@ -53,6 +53,8 @@ elif benchmark_id == 'xgb':
     from mfes.evaluate_function.eval_xgb import train
 elif benchmark_id == 'resnet_cifar100':
     from mfes.evaluate_function.eval_resnet_cifar100 import train
+elif benchmark_id == 'convnet':
+    from mfes.evaluate_function.eval_convnet_tf import train
 else:
     raise ValueError('Unsupported Ojbective function: %s' % benchmark_id)
 
