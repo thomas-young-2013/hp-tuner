@@ -35,7 +35,7 @@ class WeightedRandomForestCluster(AbstractEPM):
         if X.shape[1] != self.types.shape[0]:
             raise ValueError('Rows in X should have %d entries but have %d!' %
                              (self.types.shape[0], X.shape[1]))
-        if self.fusion == 'lc':
+        if self.fusion == 'idp':
             means, vars = np.zeros((X.shape[0], 1)), np.zeros((X.shape[0], 1))
             for r in self.surrogate_r:
                 mean, var = self.surrogate_container[r].predict(X)

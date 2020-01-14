@@ -62,6 +62,11 @@ def evaluate_weight_learning(method, cs, id):
         _n = 5
         init_weight = [1/_n] * _n
 
+    fusion_method = 'gpoe'
+    if method in ['gpoe', 'idp']:
+        fusion_method = method
+        method, power_num = 'rank_loss_p_norm', 3
+
     optimizer = MFSE(cs, train, maximal_iter,
                      weight_method=method,
                      num_iter=iter_num,
@@ -70,7 +75,8 @@ def evaluate_weight_learning(method, cs, id):
                      method_id=method_name,
                      power_num=power_num,
                      update_enable=update_flag,
-                     init_weight=init_weight)
+                     init_weight=init_weight,
+                     fusion_method=fusion_method)
 
     if benchmark_id == 'xgb':
         optimizer.restart_needed = True
