@@ -54,7 +54,7 @@ def evaluate_pruning_rate(method, cs, id):
     if method.startswith('mfse'):
         method, eta = method.split('-')
         eta = int(eta)
-        assert eta in [1, 2, 3, 4, 5]
+        assert eta in [1, 2, 3, 4, 5, 6, 7, 8]
     else:
         raise ValueError('Invalid method!')
 
