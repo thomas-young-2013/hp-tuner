@@ -81,7 +81,7 @@ if __name__ == "__main__":
     for idx, method in enumerate(methods):
         array_list = []
         for i in range(start_id, start_id + rep_num):
-            filename = "config_eval-pruning_rate_%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
+            filename = "eval-pruning_rate_%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
             array = np.load('test/samples/evaluation_exp/%s' % filename)
             array_list.append(array)
         label_name = r'\textbf{%s}' % method.replace('_', '-')
