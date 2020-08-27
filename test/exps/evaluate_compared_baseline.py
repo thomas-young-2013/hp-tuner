@@ -114,7 +114,7 @@ def evaluate_baseline(baseline_id, cs, id):
 
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda_device
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = '2'
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = '1'
     cs = get_benchmark_configspace(benchmark_id)
     for _id in range(start_id, start_id + rep_num):
         for _baseline in baselines:

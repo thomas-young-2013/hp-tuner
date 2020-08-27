@@ -1,9 +1,11 @@
 import numpy as np
 from keras.datasets import cifar10
 from keras.utils import to_categorical
+from keras import backend
 from sklearn.model_selection import train_test_split
 import cv2
 
+backend.set_image_data_format('channels_last')
 IMG_WIDTH = 32
 IMG_HEIGHT = 32
 IMG_DEPTH = 3
@@ -15,6 +17,7 @@ VALI_RANDOM_LABEL = False  # Want to use random label for validation?
 EPOCH_SIZE = 40000
 
 (x_all, y_all), (x_test, y_test) = cifar10.load_data()
+
 x_all = x_all.astype('float32')
 x_test = x_test.astype('float32')
 x_train, x_val, y_train, y_val = train_test_split(x_all, y_all, test_size=0.2, random_state=42)
