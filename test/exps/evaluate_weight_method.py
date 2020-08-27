@@ -39,7 +39,7 @@ seeds = np.random.randint(low=1, high=10000, size=start_id+rep_num)
 if benchmark_id == 'fcnet':
     from mfes.evaluate_function.eval_fcnet_tf import train
 elif benchmark_id == 'resnet':
-    from mfes.evaluate_function.eval_resnet import train
+    from mfes.evaluate_function.eval_cifar import train
 elif benchmark_id == 'xgb':
     from mfes.evaluate_function.eval_xgb import train
 else:

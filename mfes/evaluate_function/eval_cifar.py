@@ -4,7 +4,7 @@ from mfes.evaluate_function.resnet.cifar10_test import Train as Test
 from mfes.utils.ease import ease_target
 
 
-@ease_target(model_dir="./data/models", name='resnet')
+@ease_target(model_dir="./data/models", name='cifar')
 def train(epoch_num, params, logger=None):
     try:
         result = Train().train(epoch_num, params, logger)
@@ -16,7 +16,7 @@ def train(epoch_num, params, logger=None):
         print(e)
 
 
-@ease_target(model_dir="./data/models", name='resnet')
+@ease_target(model_dir="./data/models", name='cifar')
 def eval(epoch_num, params, logger=None):
     try:
         result = Test().train(epoch_num, params, logger)

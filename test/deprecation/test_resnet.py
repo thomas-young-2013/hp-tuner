@@ -29,7 +29,7 @@ from mfes.facade.batch_bo import SMAC
 from mfes.facade.mbhb import MBHB
 from mfes.facade.bo_es import SMAC_ES
 from mfes.facade.baseline_iid import BaseIID
-from mfes.evaluate_function.eval_resnet import train
+from mfes.evaluate_function.eval_cifar import train
 
 iter_num = args.iter
 maximal_iter = args.R

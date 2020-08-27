@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 import time
 from mfes.evaluate_function.resnet.resnet import resnet20
-from mfes.evaluate_function.resnet.cifar10_input import *
+from mfes.evaluate_function.resnet.svhn_input import *
 from sklearn.metrics import accuracy_score
 from torch.optim import SGD
 from torch.optim.lr_scheduler import MultiStepLR

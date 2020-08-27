@@ -33,7 +33,7 @@ def get_benchmark_configspace(benchmark_id):
 
         cs.add_hyperparameters([eta, min_child_weight, max_depth, subsample, gamma,
                                 colsample_bytree, alpha, _lambda])
-    elif benchmark_id == 'resnet':
+    elif benchmark_id in ['cifar', 'svhn']:
         cs = ConfigurationSpace()
         # padding_size = CategoricalHyperparameter('padding_size', [1, 2, 3], default_value=2)
         # batch_size = CategoricalHyperparameter('train_batch_size', [256])
