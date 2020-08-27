@@ -1,9 +1,13 @@
 import os
 from datetime import datetime
 import time
-from mfes.evaluate_function.resnet.resnet import *
+from mfes.evaluate_function.resnet.resnet import resnet20
 from mfes.evaluate_function.resnet.cifar10_input import *
 import pandas as pd
+from sklearn.metrics import accuracy_score
+from torch.optim import SGD
+from torch.optim.lr_scheduler import MultiStepLR
+from torch import nn
 
 
 class Train(object):
@@ -14,202 +18,107 @@ class Train(object):
         self.weight_decay = None
         self.lr_decay_factor = None
         self.padding_size = None
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.90)
-        self.config = tf.ConfigProto(gpu_options=gpu_options)
-
-    def placeholders(self):
-        '''
-        There are five placeholders in total.
-        image_placeholder and label_placeholder are for train images and labels
-        vali_image_placeholder and vali_label_placeholder are for validation imgaes and labels
-        lr_placeholder is for learning rate. Feed in learning rate each time of training
-        implements learning rate decay easily
-        '''
-        self.image_placeholder = tf.placeholder(dtype=tf.float32, shape=[self.train_batch_size, IMG_HEIGHT,
-                                                                         IMG_WIDTH, IMG_DEPTH])
-        self.label_placeholder = tf.placeholder(dtype=tf.int32, shape=[self.train_batch_size])
-        self.vali_image_placeholder = tf.placeholder(dtype=tf.float32, shape=[VALID_BATCH_SIZE,
-                                                                              IMG_HEIGHT, IMG_WIDTH, IMG_DEPTH])
-        self.vali_label_placeholder = tf.placeholder(dtype=tf.int32, shape=[VALID_BATCH_SIZE])
-        self.lr_placeholder = tf.placeholder(dtype=tf.float32, shape=[])
-
-    def build_train_validation_graph(self):
-        global_step = tf.Variable(0, trainable=False)
-        validation_step = tf.Variable(0, trainable=False)
-
-        # Logits of training data and valiation data come from the same graph. The inference of
-        # validation data share all the weights with train data. This is implemented by passing
-        # reuse=True to the variable scopes of train graph
-        logits = inference(self.image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=False)
-        vali_logits = inference(self.vali_image_placeholder, NUM_RESIDUAL_BLOCKS, reuse=True)
-
-        # The following codes calculate the train loss, which is consist of the
-        # softmax cross entropy and the relularization loss
-        regu_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        loss = self.loss(logits, self.label_placeholder)
-        self.full_loss = tf.add_n([loss] + regu_losses)
-
-        predictions = tf.nn.softmax(logits)
-        self.train_top1_error = self.top_k_error(predictions, self.label_placeholder, 1)
-
-        # Validation loss
-        self.vali_loss = self.loss(vali_logits, self.vali_label_placeholder)
-        vali_predictions = tf.nn.softmax(vali_logits)
-        self.vali_top1_error = self.top_k_error(vali_predictions, self.vali_label_placeholder, 1)
-
-        self.train_op, self.train_ema_op = self.train_operation(global_step, self.full_loss,
-                                                                self.train_top1_error)
-        self.val_op = self.validation_op(validation_step, self.vali_top1_error, self.vali_loss)
+        self.device = 'cuda'
 
     def train(self, epoch_num, params, logger=None):
         epoch_num = int(epoch_num)
         print(epoch_num, params)
-        self.padding_size = params['padding_size']
         self.train_batch_size = params['train_batch_size']
         self.init_lr = params['init_lr']
         self.lr_decay_factor = params['lr_decay_factor']
         self.weight_decay = params['weight_decay']
         self.momentum = params['momentum']
+        self.nesterov = True if params['nesterov'] == 'True' else False
         read_model_path = params['read_path']
         save_model_path = params['save_path']
-        graph = tf.Graph()
-        with graph.as_default():
-            self.placeholders()
-            # For the first step, we are loading all training images and validation images into the
-            # memory
-            all_data, all_labels = prepare_train_data(padding_size=self.padding_size)
-            vali_data, vali_labels = read_validation_data()
 
-            # Build the graph for train and validation
-            self.build_train_validation_graph()
+        # For the first step, we are loading all training images and validation images into the
+        # memory
+        trainloader = DataLoader(full_dataset, batch_size=self.train_batch_size, num_workers=10, sampler=train_sampler)
+        validloader = DataLoader(full_dataset, batch_size=200, num_workers=10, sampler=valid_sampler)
 
-            # Initialize a saver to save checkpoints. Merge all summaries, so we can run all
-            # summarizing operations by running summary_op. Initialize a new session
-            saver = tf.train.Saver(tf.global_variables())
-            summary_op = tf.summary.merge_all()
-            init = tf.initialize_all_variables()
+        # Initialize a saver to save checkpoints. Merge all summaries, so we can run all
+        # summarizing operations by running summary_op. Initialize a new session
 
-        sess = tf.Session(graph=graph, config=self.config)
-        sess.run(init)
+        model = resnet20(10).to(self.device)
+        optimizer = SGD(params=model.parameters(), lr=self.init_lr, momentum=self.momentum,
+                        weight_decay=self.weight_decay, nesterov=self.nesterov)
+
+        scheduler = MultiStepLR(optimizer, milestones=[68, 102],
+                                gamma=self.lr_decay_factor)
+        loss_func = nn.CrossEntropyLoss()
 
         # If you want to load from a checkpoint
-        pretrain_flag = False
-        if os.path.exists(read_model_path + '.meta'):
-            pretrain_flag = True
-            saver.restore(sess, read_model_path)
+        if os.path.exists(read_model_path):
+            checkpoint = torch.load(read_model_path)
+            model.load_state_dict(checkpoint['model'])
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            scheduler.load_state_dict(checkpoint['scheduler'])
+            start_epoch = checkpoint['epoch_num']
             print('=====================> read model from local file %s' % read_model_path)
             print('=' * 100)
+        else:
+            start_epoch = 0
 
-        # This summary writer object helps write summaries on tensorboard
-        summary_writer = tf.summary.FileWriter(train_dir, sess.graph)
-
-        # These lists are used to save a csv file at last
-        step_list = []
-        train_error_list = []
-        val_error_list = []
         print('Start training...')
         print('----------------------------')
 
-        epoch_step_num = EPOCH_SIZE // self.train_batch_size
-        if not pretrain_flag:
-            start_step = 0
-        else:
-            start_step = 5 * epoch_num // 3 * epoch_step_num  # Set R=27, total epoch 27*5=135
-        step_num = 5 * epoch_num * epoch_step_num
+        act_epoch_num = 5 * epoch_num
         lc_info = []
 
-        for step in range(start_step, step_num):
+        for epoch_id in range(start_epoch, start_epoch + act_epoch_num):
+            model.train()
+            # print('Current learning rate: %.5f' % optimizer.state_dict()['param_groups'][0]['lr'])
+            epoch_avg_loss = 0
+            epoch_avg_acc = 0
+            val_avg_loss = 0
+            val_avg_acc = 0
+            num_train_samples = 0
+            num_val_samples = 0
+            for i, data in enumerate(trainloader):
+                batch_x, batch_y = data[0], data[1]
+                num_train_samples += len(batch_x)
+                logits = model(batch_x.float().to(self.device))
+                loss = loss_func(logits, batch_y.to(self.device))
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-            train_batch_data, train_batch_labels = self.generate_augment_train_batch(all_data, all_labels,
-                                                                                     self.train_batch_size)
+                epoch_avg_loss += loss.to('cpu').detach() * len(batch_x)
+                prediction = np.argmax(logits.to('cpu').detach().numpy(), axis=-1)
+                epoch_avg_acc += accuracy_score(prediction, batch_y.to('cpu').detach().numpy()) * len(batch_x)
 
-            validation_batch_data, validation_batch_labels = self.generate_vali_batch(vali_data,
-                                                                                      vali_labels,
-                                                                                      VALID_BATCH_SIZE)
-            # Want to validate once before training. You may check the theoretical validation
-            # loss first
-            if (step + 1) % epoch_step_num == 0:
+            epoch_avg_loss /= num_train_samples
+            epoch_avg_acc /= num_train_samples
 
-                if IS_FULL_VALID:
-                    validation_loss_value, validation_error_value = self.full_validation(loss=self.vali_loss,
-                                                                                         top1_error=self.vali_top1_error,
-                                                                                         vali_data=vali_data,
-                                                                                         vali_labels=vali_labels,
-                                                                                         session=sess,
-                                                                                         batch_data=train_batch_data,
-                                                                                         batch_label=train_batch_labels)
+            print('Epoch %d: Train loss %.4f, train acc %.4f' % (epoch_id, epoch_avg_loss, epoch_avg_acc))
 
-                    vali_summ = tf.Summary()
-                    vali_summ.value.add(tag='full_validation_error',
-                                        simple_value=validation_error_value.astype(np.float))
-                    summary_writer.add_summary(vali_summ, step)
-                    summary_writer.flush()
+            if validloader is not None:
+                model.eval()
+                with torch.no_grad():
+                    for i, data in enumerate(validloader):
+                        batch_x, batch_y = data[0], data[1]
+                        logits = model(batch_x.float().to(self.device))
+                        val_loss = loss_func(logits, batch_y.to(self.device))
+                        num_val_samples += len(batch_x)
+                        val_avg_loss += val_loss.to('cpu').detach() * len(batch_x)
 
-                else:
-                    _, validation_error_value, validation_loss_value = sess.run([self.val_op,
-                                                                                 self.vali_top1_error,
-                                                                                 self.vali_loss],
-                                                                                {
-                                                                                    self.image_placeholder: train_batch_data,
-                                                                                    self.label_placeholder: train_batch_labels,
-                                                                                    self.vali_image_placeholder: validation_batch_data,
-                                                                                    self.vali_label_placeholder: validation_batch_labels,
-                                                                                    self.lr_placeholder: self.init_lr})
+                        prediction = np.argmax(logits.to('cpu').detach().numpy(), axis=-1)
+                        val_avg_acc += accuracy_score(prediction, batch_y.to('cpu').detach().numpy()) * len(batch_x)
 
-                val_error_list.append(validation_error_value)
+                    val_avg_loss /= num_val_samples
+                    val_avg_acc /= num_val_samples
+                    print('Epoch %d: Val loss %.4f, val acc %.4f' % (epoch_id, val_avg_loss, val_avg_acc))
 
-            start_time = time.time()
+            scheduler.step()
 
-            _, _, train_loss_value, train_error_value = sess.run([self.train_op, self.train_ema_op,
-                                                                  self.full_loss, self.train_top1_error],
-                                                                 {self.image_placeholder: train_batch_data,
-                                                                  self.label_placeholder: train_batch_labels,
-                                                                  self.vali_image_placeholder: validation_batch_data,
-                                                                  self.vali_label_placeholder: validation_batch_labels,
-                                                                  self.lr_placeholder: self.init_lr})
-            duration = time.time() - start_time
-
-            if (step + 1) % epoch_step_num == 0:
-                summary_str = sess.run(summary_op, {self.image_placeholder: train_batch_data,
-                                                    self.label_placeholder: train_batch_labels,
-                                                    self.vali_image_placeholder: validation_batch_data,
-                                                    self.vali_label_placeholder: validation_batch_labels,
-                                                    self.lr_placeholder: self.init_lr})
-                summary_writer.add_summary(summary_str, step)
-
-                num_examples_per_step = self.train_batch_size
-                examples_per_sec = num_examples_per_step / duration
-                sec_per_batch = float(duration)
-
-                format_str = ('%s: step %d, loss = %.4f (%.1f examples/sec; %.3f ' 'sec/batch)')
-                print(format_str % (datetime.now(), step, train_loss_value, examples_per_sec, sec_per_batch))
-                print('Train top1 error = ', train_error_value)
-                print('Validation top1 error = %.4f' % validation_error_value)
-                print('Validation loss = ', validation_loss_value)
-                print('----------------------------')
-                lc_info.append(1 - validation_error_value)
-
-                step_list.append(step)
-                train_error_list.append(train_error_value)
-
-            decay_step0 = 81 * epoch_step_num
-            decay_step1 = 121 * epoch_step_num
-            if step == decay_step0 or step == decay_step1:
-                self.init_lr = self.lr_decay_factor * self.init_lr
-                print('Learning rate decayed to ', self.init_lr)
-
-            # Save checkpoints every 10000 steps
-            if step % 10000 == 0 or (step + 1) == step_num:
-                # checkpoint_path = os.path.join(train_dir, 'model.ckpt')
-                # saver.save(sess, checkpoint_path, global_step=step)
-
-                df = pd.DataFrame(data={'step': step_list, 'train_error': train_error_list,
-                                        'validation_error': val_error_list})
-                df.to_csv(train_dir + VERSION + '_error.csv')
-
-        save_path = saver.save(sess, save_model_path)
-        print("Model saved in file: %s" % save_path)
-        result = {'loss': validation_error_value, 'early_stop': False, 'lc_info': lc_info}
+        state = {'model': model.state_dict(),
+                 'optimizer': optimizer.state_dict(),
+                 'scheduler': scheduler.state_dict(),
+                 'epoch_num': start_epoch + act_epoch_num}
+        torch.save(state, save_model_path)
+        print("Model saved in file: %s" % save_model_path)
+        result = {'loss': 1 - val_avg_acc, 'early_stop': False, 'lc_info': lc_info}
         return result
 
     def test(self, test_image_array):
@@ -267,33 +176,6 @@ class Train(object):
             prediction_array = np.concatenate((prediction_array, batch_prediction_array))
 
         return prediction_array
-
-    # Helper functions
-    def loss(self, logits, labels):
-        '''
-        Calculate the cross entropy loss given logits and true labels
-        :param logits: 2D tensor with shape [batch_size, num_labels]
-        :param labels: 1D tensor with shape [batch_size]
-        :return: loss tensor with shape [1]
-        '''
-        labels = tf.cast(labels, tf.int64)
-        cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits,
-                                                                       labels=labels, name='cross_entropy_per_example')
-        cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
-        return cross_entropy_mean
-
-    def top_k_error(self, predictions, labels, k):
-        '''
-        Calculate the top-k error
-        :param predictions: 2D tensor with shape [batch_size, num_labels]
-        :param labels: 1D tensor with shape [batch_size, 1]
-        :param k: int
-        :return: tensor with shape [1]
-        '''
-        batch_size = predictions.get_shape().as_list()[0]
-        in_top1 = tf.to_float(tf.nn.in_top_k(predictions, labels, k=1))
-        num_correct = tf.reduce_sum(in_top1)
-        return (batch_size - num_correct) / float(batch_size)
 
     def generate_vali_batch(self, vali_data, vali_label, vali_batch_size):
         '''

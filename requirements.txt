@@ -26,5 +26,7 @@ git+https://github.com/stokasto/sgmcmc.git
 git+https://github.com/automl/HPOlib2.git
 nose
 
+xgboost
+torch
 keras
 dill
