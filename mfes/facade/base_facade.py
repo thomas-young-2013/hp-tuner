@@ -4,7 +4,7 @@ import pickle as pkl
 import dill
 import os
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from matplotlib import pyplot as plt
 from mfes.utils.logging_utils import get_logger, setup_logger
 
@@ -32,7 +32,7 @@ class BaseFacade(object):
         self.objective_func = dill.dumps(objective_func)
         self.trial_statistics = []
         self.num_workers = n_workers
-        self.pool = ThreadPoolExecutor(max_workers=n_workers)
+        self.pool = ProcessPoolExecutor(max_workers=n_workers)
         self.recorder = []
 
         self.global_start_time = time.time()

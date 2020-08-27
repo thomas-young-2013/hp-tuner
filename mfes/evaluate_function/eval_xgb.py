@@ -30,6 +30,7 @@ resource_unit = s_max // 27
 @ease_target(model_dir="./data/models", name='xgb')
 def train(resource_num, params, logger=None):
     resource_num = int(resource_num)
+    print(resource_num, params)
     global x_train, y_train
     s_max = x_train.shape[0]
     # Create the subset of the full dataset.
@@ -67,4 +68,5 @@ def train(resource_num, params, logger=None):
     if num_cls == 2:
         pred = [int(i > 0.5) for i in pred]
     acc = accuracy_score(dmvalid.get_label(), pred)
+    print(resource_num, params, acc)
     return {'loss': 1 - acc, 'early_stop': False, 'lc_info': []}
