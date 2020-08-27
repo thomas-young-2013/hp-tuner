@@ -50,7 +50,7 @@ if benchmark_id == 'fcnet':
 elif benchmark_id == 'resnet':
     from mfes.evaluate_function.eval_cifar import train
 elif benchmark_id == 'xgb':
-    from mfes.evaluate_function.eval_xgb import train
+    from mfes.evaluate_function.eval_covtype import train
 elif benchmark_id == 'resnet_cifar100':
     from mfes.evaluate_function.eval_resnet_cifar100 import train
 elif benchmark_id == 'convnet':

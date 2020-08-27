@@ -10,24 +10,33 @@ from sklearn.model_selection import train_test_split
 from mfes.utils.ease import ease_target
 
 
-def load_covtype():
-    file_path = 'data/covtype/covtype.data'
-    data = pd.read_csv(file_path, delimiter=',', header=None).values
-    x = data[:, :-1]
-    y = data[:, -1] - 1
+def load_higgs():
+    file_path = 'data/higgs/higgs.csv'
+    data = pd.read_csv(file_path, delimiter=',', header='infer', na_values=['?'])
+    for column in data.columns:
+        if any(data[column].isnull()):
+            if len(data[column].unique()) < 20:  # Categorical, use mode(0)
+                data[column].fillna(value=0, inplace=True)
+            else:  # Use mean
+                mean_num = data[column].mean()
+                data[column].fillna(value=mean_num, inplace=True)
+    assert all(data.isnull())
+    data = data.values
+    x = data[:, 1:]
+    y = data[:, 0]
     return x, y
 
 
-X, y = load_covtype()
-num_cls = 7
+X, y = load_higgs()
+num_cls = 2
 x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
-print('x_train shape:', x_train.shape)
-print('x_train shape:', x_test.shape)
+print('x_train shape:', x_train.shape, x_train.dtype)
+print('x_train shape:', x_test.shape, x_test.dtype)
 s_max = x_train.shape[0]
 resource_unit = s_max // 27
 
 
-@ease_target(model_dir="./data/models", name='xgb')
+@ease_target(model_dir="./data/models", name='higgs')
 def train(resource_num, params, logger=None):
     resource_num = int(resource_num)
     print(resource_num, params)

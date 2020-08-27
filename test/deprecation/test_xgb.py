@@ -20,7 +20,7 @@ sys.path.append('/home/liyang/thomas/hp-tuner')
 # Import ConfigSpace and different types of parameters
 from mfes.config_space import ConfigurationSpace, sample_configurations
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, UniformIntegerHyperparameter
-from mfes.evaluate_function.eval_xgb import train
+from mfes.evaluate_function.eval_covtype import train
 from mfes.facade.bohb import BOHB
 from mfes.facade.bo_es import SMAC_ES
 from mfes.facade.hb import Hyperband

@@ -30,7 +30,7 @@ class TSE(object):
         self.s_time = time.time()
         self.n_workers = n_workers
         os.makedirs('data/xgb', exist_ok=True)
-        from mfes.evaluate_function.eval_xgb import load_covtype
+        from mfes.evaluate_function.eval_covtype import load_covtype
         self.X, self.y = load_covtype()
         self.num_cls = 7
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.2)

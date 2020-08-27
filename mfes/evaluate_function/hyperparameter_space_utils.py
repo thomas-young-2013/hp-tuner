@@ -19,7 +19,7 @@ def get_benchmark_configspace(benchmark_id):
         kernel_regularizer = UniformFloatHyperparameter("k_reg", 1e-9, 1e-4, default_value=1e-6, q=5e-7, log=True)
         cs.add_hyperparameters([learning_rate, momentum, lr_decay, n_layer1, n_layer2, batch_size, dropout1, dropout2,
                                 kernel_regularizer])
-    elif benchmark_id == 'xgb':
+    elif benchmark_id in ['covtype', 'higgs']:
         cs = ConfigurationSpace()
         # n_estimators = UniformFloatHyperparameter("n_estimators", 100, 600, default_value=200, q=10)
         eta = UniformFloatHyperparameter("eta", 0.01, 0.9, default_value=0.3, q=0.01)

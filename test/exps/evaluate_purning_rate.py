@@ -41,7 +41,7 @@ if benchmark_id == 'fcnet':
 elif benchmark_id == 'resnet':
     from mfes.evaluate_function.eval_cifar import train
 elif benchmark_id == 'xgb':
-    from mfes.evaluate_function.eval_xgb import train
+    from mfes.evaluate_function.eval_covtype import train
 else:
     raise ValueError('Unsupported Ojbective function: %s' % benchmark_id)
 
