@@ -14,7 +14,7 @@ class Train(object):
         self.weight_decay = None
         self.lr_decay_factor = None
         self.padding_size = None
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.95)
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.90)
         self.config = tf.ConfigProto(gpu_options=gpu_options)
 
     def placeholders(self):
@@ -114,8 +114,8 @@ class Train(object):
         if not pretrain_flag:
             start_step = 0
         else:
-            start_step = 2 * epoch_num // 3 * epoch_step_num
-        step_num = 2 * epoch_num * epoch_step_num
+            start_step = 5 * epoch_num // 3 * epoch_step_num  # Set R=27, total epoch 27*5=135
+        step_num = 5 * epoch_num * epoch_step_num
         lc_info = []
 
         for step in range(start_step, step_num):

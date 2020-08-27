@@ -82,8 +82,8 @@ def evaluate_baseline(baseline_id, cs, id):
         optimizer = MBHB(cs, train, maximal_iter, num_iter=iter_num,
                          n_workers=n_worker, random_state=_seed, method_id=method_name)
     elif baseline_id == 'mfse':
-        optimizer = MFSE(cs, train, maximal_iter, num_iter=iter_num, weight_method='rank_loss_p_norm',
-                         n_workers=n_worker, random_state=_seed, method_id=method_name, power_num=3)
+        optimizer = MFSE(cs, train, maximal_iter, num_iter=iter_num, weight_method='rank_loss_prob',
+                         n_workers=n_worker, random_state=_seed, method_id=method_name)
     elif baseline_id == 'smac':
         optimizer = SMAC(cs, train, maximal_iter, num_iter=iter_num,
                          n_workers=1, random_state=_seed, method_id=method_name)
