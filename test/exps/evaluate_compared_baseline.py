@@ -18,7 +18,7 @@ from mfes.facade.tse import TSE
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
-                    choices=['fcnet', 'cifar', 'svhn', 'covtype', 'higgs', 'convnet'],
+                    choices=['fcnet', 'cifar', 'svhn', 'covtype', 'covtype_svm', 'higgs', 'convnet'],
                     default='fcnet')
 parser.add_argument('--baseline', type=str, default='hb,bohb,mfse')
 parser.add_argument('--R', type=int, default=81)
