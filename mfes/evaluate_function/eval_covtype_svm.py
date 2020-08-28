@@ -40,14 +40,20 @@ def train(resource_num, params, logger=None):
     shuffle = np.random.permutation(np.arange(s_max))
     train_samples = x_train[shuffle[:subset_size]]
     train_labels = y_train[shuffle[:subset_size]]
+    C = params['C']
+    kernel = params['kernel']
+    degree = params.get('degree', 3)
+    gamma = params['gamma']
+    coef0 = params.get('coef0', 0)
+    tol = params['tol']
 
-    model = SVC(C=params['C'],
-                kernel=params['kernel'],
-                degree=params['degree'],
-                gamma=params['gamma'],
-                coef0=params['coef0'],
-                tol=params['tol'],
-                max_iter=10000,
+    model = SVC(C=C,
+                kernel=kernel,
+                degree=degree,
+                gamma=gamma,
+                coef0=coef0,
+                tol=tol,
+                max_iter=2500,
                 random_state=1,
                 decision_function_shape='ovr')
     model.fit(train_samples, train_labels)
