@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import os
+import time
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -31,6 +31,7 @@ resource_unit = s_max // 27
 
 @ease_target(model_dir="./data/models", name='covtype')
 def train(resource_num, params, logger=None):
+    start_time = time.time()
     resource_num = int(resource_num)
     print(resource_num, params)
     global x_train, y_train
@@ -70,5 +71,5 @@ def train(resource_num, params, logger=None):
     if num_cls == 2:
         pred = [int(i > 0.5) for i in pred]
     acc = accuracy_score(dmvalid.get_label(), pred)
-    print(resource_num, params, acc)
+    print(resource_num, params, acc, time.time() - start_time)
     return {'loss': 1 - acc, 'early_stop': False, 'lc_info': []}

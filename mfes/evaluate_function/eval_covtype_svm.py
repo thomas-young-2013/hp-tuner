@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-import os
+import time
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
@@ -30,6 +30,7 @@ resource_unit = s_max // 27
 
 @ease_target(model_dir="./data/models", name='covtype_svm')
 def train(resource_num, params, logger=None):
+    start_time = time.time()
     resource_num = int(resource_num)
     print(resource_num, params)
     global x_train, y_train
@@ -54,5 +55,5 @@ def train(resource_num, params, logger=None):
 
     pred = model.predict(x_valid)
     acc = accuracy_score(y_valid, pred)
-    print(resource_num, params, acc)
+    print(resource_num, params, acc, time.time() - start_time)
     return {'loss': 1 - acc, 'early_stop': False, 'lc_info': []}
