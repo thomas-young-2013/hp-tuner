@@ -21,7 +21,7 @@ def load_covtype():
 X, y = load_covtype()
 num_cls = 7
 x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=1)
-x_train, x_valid, y_train, y_valid = train_test_split(x_train, y_train, test_size=0.25, stratify=y_train,
+x_train, x_valid, y_train, y_valid = train_test_split(x_train, y_train, test_size=0.2, stratify=y_train,
                                                       random_state=1)
 print('x_train shape:', x_train.shape)
 print('x_train shape:', x_test.shape)

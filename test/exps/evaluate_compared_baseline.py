@@ -18,7 +18,7 @@ from mfes.facade.tse import TSE
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
-                    choices=['fcnet', 'cifar', 'svhn', 'covtype', 'covtype_svm', 'higgs', 'convnet'],
+                    choices=['fcnet', 'cifar', 'svhn', 'covtype', 'covtype_svm', 'mnist_svm', 'higgs', 'convnet'],
                     default='fcnet')
 parser.add_argument('--baseline', type=str, default='hb,bohb,mfse')
 parser.add_argument('--R', type=int, default=81)
@@ -55,6 +55,8 @@ elif benchmark_id == 'covtype':
     from mfes.evaluate_function.eval_covtype import train
 elif benchmark_id == 'covtype_svm':
     from mfes.evaluate_function.eval_covtype_svm import train
+elif benchmark_id == 'mnist_svm':
+    from mfes.evaluate_function.eval_mnist_svm import train
 elif benchmark_id == 'higgs':
     from mfes.evaluate_function.eval_higgs import train
 elif benchmark_id == 'resnet_cifar100':

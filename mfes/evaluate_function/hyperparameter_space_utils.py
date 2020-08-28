@@ -33,7 +33,7 @@ def get_benchmark_configspace(benchmark_id):
 
         cs.add_hyperparameters([eta, min_child_weight, max_depth, subsample, gamma,
                                 colsample_bytree, alpha, _lambda])
-    elif benchmark_id in ['covtype_svm']:
+    elif benchmark_id in ['covtype_svm', 'mnist_svm']:
         C = UniformFloatHyperparameter("C", 1e-3, 1e5, log=True,
                                        default_value=1.0)
         kernel = CategoricalHyperparameter("kernel",

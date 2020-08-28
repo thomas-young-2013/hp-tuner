@@ -9,26 +9,27 @@ from sklearn.svm import SVC
 from mfes.utils.ease import ease_target
 
 
-def load_covtype():
-    file_path = 'data/covtype/covtype.data'
-    data = pd.read_csv(file_path, delimiter=',', header=None).values
-    x = data[:, :-1]
-    y = data[:, -1] - 1
+def load_mnist():
+    file_path = 'data/mnist/mnist_784.csv'
+    data = pd.read_csv(file_path, delimiter=',', header='infer')
+    data = data.values
+    x = data[:, :-1] / 255
+    y = data[:, -1]
     return x, y
 
 
-X, y = load_covtype()
-num_cls = 7
-x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=1)
+X, y = load_mnist()
+num_cls = 10
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=1 / 7, stratify=y, random_state=1)
 x_train, x_valid, y_train, y_valid = train_test_split(x_train, y_train, test_size=0.2, stratify=y_train,
                                                       random_state=1)
 print('x_train shape:', x_train.shape)
-print('x_train shape:', x_test.shape)
+print('x_valid shape:', x_valid.shape)
 s_max = x_train.shape[0]
 resource_unit = s_max // 27
 
 
-@ease_target(model_dir="./data/models", name='covtype_svm')
+@ease_target(model_dir="./data/models", name='mnist_svm')
 def train(resource_num, params, logger=None):
     start_time = time.time()
     resource_num = int(resource_num)
@@ -53,7 +54,7 @@ def train(resource_num, params, logger=None):
                 gamma=gamma,
                 coef0=coef0,
                 tol=tol,
-                max_iter=4000,
+                max_iter=700,
                 random_state=1,
                 decision_function_shape='ovr')
     model.fit(train_samples, train_labels)
