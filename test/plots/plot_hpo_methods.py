@@ -21,7 +21,6 @@ plt.rc('legend', **{'fontsize': 12})
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
-                    choices=['fcnet', 'resnet', 'xgb'],
                     default='fcnet')
 parser.add_argument('--methods', type=str, default='hb,bohb,mbhb,boes,mfse,smac,random_search')
 parser.add_argument('--n', type=int, default=1)
@@ -87,7 +86,7 @@ if __name__ == "__main__":
         array_list = []
         for i in range(start_id, start_id + rep_num):
             filename = "%s-%s-%d-%d-%d.npy" % (method, benchmark_id, i, runtime_limit, n_worker)
-            path = os.path.join("test/samples/%s/" % benchmark_id, filename)
+            path = os.path.join("/Users/shenyu/mfse_exp", filename)
             array = np.load(path)
             array_list.append(array)
         label_name = r'\textbf{%s}' % method.replace('_', '-')
@@ -111,13 +110,15 @@ if __name__ == "__main__":
     if benchmark_id == 'fcnet':
         ax.set_ylim(0.073, .08)
         plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
-    elif benchmark_id == 'xgb':
+    elif benchmark_id == 'covtype':
         ax.set_ylim(0.025, .06)
         plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
-    elif benchmark_id == 'resnet':
+    elif benchmark_id == 'cifar':
         ax.set_ylim(0.08, .13)
         plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
-    else:
-        raise ValueError('Unsupported benchmark name: %s!' % benchmark_id)
+    elif benchmark_id=='higgs':
+        ax.set_ylim(0.25, .32)
+        plt.subplots_adjust(top=0.98, right=0.975, left=0.09, bottom=0.13)
+        # raise ValueError('Unsupported benchmark name: %s!' % benchmark_id)
     plt.savefig('test/samples/figures/%s_%d_%d_%d_result.pdf' % (benchmark_id, runtime_limit, n_worker, rep_num))
     plt.show()

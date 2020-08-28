@@ -3,10 +3,9 @@ from __future__ import division, print_function, absolute_import
 import os
 import numpy as np
 import pandas as pd
-import xgboost as xgb
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-
+from sklearn.svm import SVC
 from mfes.utils.ease import ease_target
 
 
@@ -29,7 +28,7 @@ s_max = x_train.shape[0]
 resource_unit = s_max // 27
 
 
-@ease_target(model_dir="./data/models", name='covtype')
+@ease_target(model_dir="./data/models", name='covtype_svm')
 def train(resource_num, params, logger=None):
     resource_num = int(resource_num)
     print(resource_num, params)
@@ -39,36 +38,21 @@ def train(resource_num, params, logger=None):
     subset_size = resource_num * resource_unit
     shuffle = np.random.permutation(np.arange(s_max))
     train_samples = x_train[shuffle[:subset_size]]
-    train_lables = y_train[shuffle[:subset_size]]
-    dmtrain = xgb.DMatrix(train_samples, label=train_lables)
-    dmvalid = xgb.DMatrix(x_valid, label=y_valid)
+    train_labels = y_train[shuffle[:subset_size]]
 
-    num_round = 200
-    parameters = {}
-    for p in params:
-        parameters[p] = params[p]
+    model = SVC(C=params['C'],
+                kernel=params['kernel'],
+                degree=params['degree'],
+                gamma=params['gamma'],
+                coef0=params['coef0'],
+                shrinking=params['shrinking'],
+                tol=params['tol'],
+                max_iter=10000,
+                random_state=1,
+                decision_function_shape='ovr')
+    model.fit(train_samples, train_labels)
 
-    if num_cls > 2:
-        parameters['num_class'] = num_cls
-        parameters['objective'] = 'multi:softmax'
-        parameters['eval_metric'] = 'merror'
-    elif num_cls == 2:
-        parameters['objective'] = 'binary:logistic'
-        parameters['eval_metric'] = 'error'
-
-    parameters['tree_method'] = 'hist'
-    parameters['booster'] = 'gbtree'
-    n_thread = 2
-    # if resource_num == 27:
-    #     n_thread = 3
-    parameters['nthread'] = n_thread
-    parameters['silent'] = 1
-    watchlist = [(dmtrain, 'train'), (dmvalid, 'valid')]
-
-    model = xgb.train(parameters, dmtrain, num_round, watchlist, verbose_eval=0)
-    pred = model.predict(dmvalid)
-    if num_cls == 2:
-        pred = [int(i > 0.5) for i in pred]
-    acc = accuracy_score(dmvalid.get_label(), pred)
+    pred = model.predict(x_valid)
+    acc = accuracy_score(y_valid, pred)
     print(resource_num, params, acc)
     return {'loss': 1 - acc, 'early_stop': False, 'lc_info': []}

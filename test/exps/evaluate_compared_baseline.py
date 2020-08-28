@@ -53,6 +53,8 @@ elif benchmark_id == 'svhn':
     from mfes.evaluate_function.eval_svhn import train
 elif benchmark_id == 'covtype':
     from mfes.evaluate_function.eval_covtype import train
+elif benchmark_id == 'covtype_svm':
+    from mfes.evaluate_function.eval_covtype_svm import train
 elif benchmark_id == 'higgs':
     from mfes.evaluate_function.eval_higgs import train
 elif benchmark_id == 'resnet_cifar100':
