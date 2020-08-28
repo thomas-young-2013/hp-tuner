@@ -46,7 +46,6 @@ def train(resource_num, params, logger=None):
                 degree=params['degree'],
                 gamma=params['gamma'],
                 coef0=params['coef0'],
-                shrinking=params['shrinking'],
                 tol=params['tol'],
                 max_iter=10000,
                 random_state=1,

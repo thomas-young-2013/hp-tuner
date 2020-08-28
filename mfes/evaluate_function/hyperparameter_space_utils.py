@@ -43,16 +43,13 @@ def get_benchmark_configspace(benchmark_id):
         gamma = UniformFloatHyperparameter("gamma", 1e-5, 10,
                                            log=True, default_value=0.1)
         coef0 = UniformFloatHyperparameter("coef0", -1, 1, default_value=0)
-        shrinking = CategoricalHyperparameter("shrinking", ["True", "False"],
-                                              default_value="True")
         tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-3,
                                          log=True)
         # cache size is not a hyperparameter, but an argument to the program!
         max_iter = UnParametrizedHyperparameter("max_iter", 10000)
 
         cs = ConfigurationSpace()
-        cs.add_hyperparameters([C, kernel, degree, gamma, coef0, shrinking,
-                                tol, max_iter])
+        cs.add_hyperparameters([C, kernel, degree, gamma, coef0, tol, max_iter])
 
         degree_depends_on_poly = EqualsCondition(degree, kernel, "poly")
         coef0_condition = InCondition(coef0, kernel, ["poly", "sigmoid"])
