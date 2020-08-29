@@ -98,7 +98,7 @@ class TSE(object):
                     gamma=gamma,
                     coef0=coef0,
                     tol=tol,
-                    max_iter=2500,
+                    max_iter=1000,
                     random_state=1,
                     decision_function_shape='ovr')
         model.fit(train_samples, train_labels)
@@ -106,7 +106,7 @@ class TSE(object):
         pred = model.predict(self.x_valid)
         acc = accuracy_score(self.y_valid, pred)
         err = 1 - acc
-        # print(params, acc, time.time() - start_time)
+        print(params, acc, time.time() - start_time)
 
         c = time.time() - start_time
 
