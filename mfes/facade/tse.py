@@ -6,6 +6,7 @@ import xgboost as xgb
 from sklearn.metrics import accuracy_score
 from matplotlib import pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
 
 from mfes.evaluate_function.hyperparameter_space_utils import get_benchmark_configspace
 from mfes.model.rf_with_instances import RandomForestWithInstances
@@ -33,9 +34,13 @@ class TSE(object):
         from mfes.evaluate_function.eval_covtype import load_covtype
         self.X, self.y = load_covtype()
         self.num_cls = 7
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.2)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.2,
+                                                                                stratify=self.y, random_state=1)
+        self.x_train, self.x_valid, self.y_train, self.y_valid = train_test_split(self.x_train, self.y_train,
+                                                                                  test_size=0.2, stratify=self.y_train,
+                                                                                  random_state=1)
         print('x_train shape:', self.x_train.shape)
-        print('x_train shape:', self.x_test.shape)
+        print('x_valid shape:', self.x_valid.shape)
 
         # Basic settings in TSE.
         self.s_max = self.y_train.shape[0]
@@ -77,36 +82,31 @@ class TSE(object):
 
         # Shuffle the data and split up the request subset of the training data
         shuffle = np.random.permutation(np.arange(self.s_max))
-        train_subset = self.x_train[shuffle[:s]]
-        train_targets_subset = self.y_train[shuffle[:s]]
+        train_samples = self.x_train[shuffle[:s]]
+        train_labels = self.y_train[shuffle[:s]]
 
-        dmtrain = xgb.DMatrix(train_subset, label=train_targets_subset)
-        dmvalid = xgb.DMatrix(self.x_test, label=self.y_test)
+        C = params['C']
+        kernel = params['kernel']
+        degree = params.get('degree', 3)
+        gamma = params['gamma']
+        coef0 = params.get('coef0', 0)
+        tol = params['tol']
 
-        num_round = 200
-        parameters = {}
-        for p in params:
-            parameters[p] = params[p]
+        model = SVC(C=C,
+                    kernel=kernel,
+                    degree=degree,
+                    gamma=gamma,
+                    coef0=coef0,
+                    tol=tol,
+                    max_iter=2500,
+                    random_state=1,
+                    decision_function_shape='ovr')
+        model.fit(train_samples, train_labels)
 
-        if self.num_cls > 2:
-            parameters['num_class'] = self.num_cls
-            parameters['objective'] = 'multi:softmax'
-            parameters['eval_metric'] = 'merror'
-        elif self.num_cls == 2:
-            parameters['objective'] = 'binary:logistic'
-            parameters['eval_metric'] = 'error'
-
-        parameters['tree_method'] = 'hist'
-        parameters['booster'] = 'gbtree'
-        parameters['nthread'] = 2
-        parameters['silent'] = 1
-        watchlist = [(dmtrain, 'train'), (dmvalid, 'valid')]
-
-        model = xgb.train(parameters, dmtrain, num_round, watchlist, verbose_eval=0)
-        pred = model.predict(dmvalid)
-        if self.num_cls == 2:
-            pred = [int(i > 0.5) for i in pred]
-        err = 1 - accuracy_score(dmvalid.get_label(), pred)
+        pred = model.predict(self.x_valid)
+        acc = accuracy_score(self.y_valid, pred)
+        err = 1 - acc
+        # print(params, acc, time.time() - start_time)
 
         c = time.time() - start_time
 
@@ -119,7 +119,7 @@ class TSE(object):
             sample_num_m = self.s_min
 
         start_time = time.time()
-        config_space = get_benchmark_configspace('xgb')
+        config_space = get_benchmark_configspace('covtype_svm')
         types, bounds = get_types(config_space)
         num_hp = len(bounds)
         surrogate = RandomForestWithInstances(types=types, bounds=bounds)
@@ -170,7 +170,7 @@ class TSE(object):
                 y_delta.append(perf_t - perf_l)
             else:
                 y_delta.append(perf_t)
-
+        print('end mini %s' % (time.time() - start_time))
         return [convert_configurations_to_array(X), np.array(y_delta, dtype=np.float64)]
 
     def run(self, train_base_models=True):
@@ -185,7 +185,7 @@ class TSE(object):
 
         weight = np.array([1 / self.K] * (self.K + 1))
         config_evaluated = []
-        config_space = get_benchmark_configspace('xgb')
+        config_space = get_benchmark_configspace('covtype_svm')
         # Initialize config L.
         config_L = sample_configurations(config_space, self.num_L_init)
 
@@ -205,7 +205,7 @@ class TSE(object):
 
         # Create base models.
         base_models = list()
-        config_space = get_benchmark_configspace('xgb')
+        config_space = get_benchmark_configspace('covtype_svm')
         types, bounds = get_types(config_space)
         for iter_t in range(self.K + 1):
             config_x, config_y = training_data[iter_t]

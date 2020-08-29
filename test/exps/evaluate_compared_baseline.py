@@ -111,7 +111,7 @@ def evaluate_baseline(baseline_id, cs, id):
     else:
         raise ValueError('Invalid baseline name: %s' % baseline_id)
 
-    if benchmark_id == 'xgb':
+    if benchmark_id in ['covtype_svm', 'mnist_svm']:
         optimizer.restart_needed = True
     optimizer.runtime_limit = runtime_limit
 
