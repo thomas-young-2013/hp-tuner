@@ -98,7 +98,7 @@ class TSE(object):
                     gamma=gamma,
                     coef0=coef0,
                     tol=tol,
-                    max_iter=1000,
+                    max_iter=1500,
                     random_state=1,
                     decision_function_shape='ovr')
         model.fit(train_samples, train_labels)
