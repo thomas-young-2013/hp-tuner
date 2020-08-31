@@ -193,11 +193,14 @@ class MFSE(BaseFacade):
             self.remove_immediate_model()
 
     def get_bo_candidates(self, num_configs):
+        incumbent = dict()
         incumbent_value = np.min(std_normalization(self.target_y[self.iterate_r[-1]]))
-        print('Current inc', incumbent_value, self.history_container.get_incumbents()[0][1])
+        incumbent['config'] = self.history_container.get_incumbents()[0][1]
+        incumbent['obj'] = incumbent_value
+        print('Current inc', incumbent)
         # incumbent_value = self.history_container.get_incumbents()[0][1]
         # Update surrogate model in acquisition function.
-        self.acquisition_function.update(model=self.weighted_surrogate, eta=incumbent_value,
+        self.acquisition_function.update(model=self.weighted_surrogate, eta=incumbent,
                                          num_data=len(self.history_container.data))
 
         challengers = self.acq_optimizer.maximize(
