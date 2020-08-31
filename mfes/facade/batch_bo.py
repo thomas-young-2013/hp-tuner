@@ -70,16 +70,11 @@ class SMAC(BaseFacade):
             self.remove_immediate_model()
 
     def choose_next(self, num_config):
-        # if len(self.incumbent_obj) < 2 * self.num_config:
-        #     return sample_configurations(self.config_space, num_config)
-
         if len(self.incumbent_obj) < 3:
             return sample_configurations(self.config_space, num_config)
 
-        # print('choose next starts!')
-        self.logger.info('train feature is: %s' % str(self.incumbent_configs[-5:]))
-        self.logger.info('train target is: %s' % str(self.incumbent_obj))
-
+        self.logger.info('BO Training - X: %s' % str(self.incumbent_configs[-5:]))
+        self.logger.info('BO Training - Y: %s' % str(self.incumbent_obj))
         self.surrogate.train(convert_configurations_to_array(self.incumbent_configs),
                              np.array(self.incumbent_obj, dtype=np.float64))
 
