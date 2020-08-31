@@ -216,7 +216,7 @@ class MFSE(BaseFacade):
         acq_idx = 0
         for idx in range(1, 1+2*num_config):
             # Like BOHB, sample a fixed percentage of random configurations.
-            if self.random_configuration_chooser.check(self.iteration_id):
+            if self.random_configuration_chooser.check(idx):
                 _config = self.config_space.sample_configuration()
             else:
                 _config = acq_configs[acq_idx]
