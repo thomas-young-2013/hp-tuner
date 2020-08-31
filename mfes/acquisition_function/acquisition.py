@@ -51,7 +51,7 @@ class AbstractAcquisitionFunction(object, metaclass=abc.ABCMeta):
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
-    def __call__(self, configurations: np.ndarray):
+    def __call__(self, configurations: List):
         """Computes the acquisition value for a given X
 
         Parameters
@@ -65,7 +65,10 @@ class AbstractAcquisitionFunction(object, metaclass=abc.ABCMeta):
         np.ndarray(N, 1)
             acquisition values for X
         """
-        X = configurations
+        if isinstance(configurations, np.ndarray):
+            X = configurations
+        else:
+            X = convert_configurations_to_array(configurations)
         if len(X.shape) == 1:
             X = X[np.newaxis, :]
 

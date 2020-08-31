@@ -8,7 +8,7 @@ from mfes.utils.util_funcs import get_types
 from mfes.facade.base_facade import BaseFacade
 from mfes.config_space import ConfigurationSpace
 from mfes.acquisition_function.acquisition import EI
-from mfes.utils.util_funcs import minmax_normalization
+from mfes.utils.util_funcs import minmax_normalization, std_normalization
 from mfes.config_space.util import expand_configurations
 from mfes.model.rf_with_instances import RandomForestWithInstances
 from mfes.model.weighted_rf_ensemble import WeightedRandomForestCluster
@@ -51,7 +51,7 @@ class MFSE(BaseFacade):
             init_weight.extend([1. / self.s_max] * self.s_max)
         assert len(init_weight) == (self.s_max + 1)
         if self.weight_method == 'equal_weight':
-            assert self.update_enable == False
+            assert self.update_enable is False
         self.logger.info('Weight method & flag: %s-%s' % (self.weight_method, str(self.update_enable)))
         self.logger.info("Initial weight is: %s" % init_weight[:self.s_max + 1])
         types, bounds = get_types(config_space)
@@ -169,8 +169,8 @@ class MFSE(BaseFacade):
             self.remove_immediate_model()
 
             for item in self.iterate_r[self.iterate_r.index(r):]:
-                # NORMALIZE Objective value: MinMax linear normalization
-                normalized_y = minmax_normalization(self.target_y[item])
+                # NORMALIZE Objective value: normalization
+                normalized_y = std_normalization(self.target_y[item])
                 self.weighted_surrogate.train(convert_configurations_to_array(self.target_x[item]),
                                               np.array(normalized_y, dtype=np.float64), r=item)
 
@@ -193,7 +193,9 @@ class MFSE(BaseFacade):
             self.remove_immediate_model()
 
     def get_bo_candidates(self, num_configs):
-        incumbent_value = self.history_container.get_incumbents()[0][1]
+        incumbent_value = np.min(std_normalization(self.target_y[self.iterate_r[-1]]))
+        print('Current inc', incumbent_value, self.history_container.get_incumbents()[0][1])
+        # incumbent_value = self.history_container.get_incumbents()[0][1]
         # Update surrogate model in acquisition function.
         self.acquisition_function.update(model=self.weighted_surrogate, eta=incumbent_value,
                                          num_data=len(self.history_container.data))
