@@ -10,10 +10,14 @@ from mfes.config_space import ConfigurationSpace
 from mfes.acquisition_function.acquisition import EI
 from mfes.utils.util_funcs import minmax_normalization
 from mfes.config_space.util import expand_configurations
-from mfes.optimizer.random_sampling import RandomSampling
 from mfes.model.rf_with_instances import RandomForestWithInstances
 from mfes.model.weighted_rf_ensemble import WeightedRandomForestCluster
 from mfes.config_space import convert_configurations_to_array, sample_configurations
+
+from litebo.utils.history_container import HistoryContainer
+from litebo.model.rf_with_instances import RandomForestWithInstances
+from litebo.optimizer.ei_optimization import InterleavedLocalAndRandomSearch, RandomSearch
+from litebo.optimizer.random_configuration_chooser import ChooserProb
 
 
 class MFSE(BaseFacade):
@@ -56,9 +60,7 @@ class MFSE(BaseFacade):
         self.weighted_surrogate = WeightedRandomForestCluster(
             types, bounds, self.s_max, self.eta, init_weight, self.fusion_method
         )
-        self.weighted_acquisition_func = EI(model=self.weighted_surrogate)
-        self.weighted_acq_optimizer = RandomSampling(self.weighted_acquisition_func,
-                                                     config_space, n_samples=max(500, 50 * self.num_config))
+        self.acquisition_function = EI(model=self.weighted_surrogate)
 
         self.incumbent_configs = []
         self.incumbent_perfs = []
@@ -76,6 +78,25 @@ class MFSE(BaseFacade):
             self.target_x[r] = []
             self.target_y[r] = []
 
+        # BO optimizer settings.
+        self.history_container = HistoryContainer('mfse-container')
+        self.sls_max_steps = None
+        self.n_sls_iterations = 5
+        self.sls_n_steps_plateau_walk = 10
+        rng = np.random.RandomState(seed=random_state)
+        self.acq_optimizer = InterleavedLocalAndRandomSearch(
+            acquisition_function=self.acquisition_function,
+            config_space=self.config_space,
+            rng=rng,
+            max_steps=self.sls_max_steps,
+            n_steps_plateau_walk=self.sls_n_steps_plateau_walk,
+            n_sls_iterations=self.n_sls_iterations
+        )
+        self._random_search = RandomSearch(
+            self.acquisition_function, self.config_space, rng=rng
+        )
+        self.random_configuration_chooser = ChooserProb(prob=0.2, rng=rng)
+
     def iterate(self, skip_last=0):
 
         for s in reversed(range(self.s_max + 1)):
@@ -91,7 +112,7 @@ class MFSE(BaseFacade):
 
             # Choose a batch of configurations in different mechanisms.
             start_time = time.time()
-            T = self.choose_next_weighted(n)
+            T = self.choose_next_batch(n)
             time_elapsed = time.time() - start_time
             self.logger.info("[%s] Choosing next configurations took %.2f sec." % (self.method_name, time_elapsed))
 
@@ -124,6 +145,9 @@ class MFSE(BaseFacade):
                 if int(n_iterations) == self.R:
                     self.incumbent_configs.extend(T)
                     self.incumbent_perfs.extend(val_losses)
+                    # Update history container.
+                    for _config, _perf in zip(T, val_losses):
+                        self.history_container.add(_config, _perf)
 
                 # Select a number of best configurations for the next loop.
                 # Filter out early stops, if any.
@@ -168,31 +192,41 @@ class MFSE(BaseFacade):
             # clear the immediate result.
             self.remove_immediate_model()
 
-    def choose_next_weighted(self, num_config):
+    def get_bo_candidates(self, num_configs):
+        incumbent_value = self.history_container.get_incumbents()[0][1]
+        # Update surrogate model in acquisition function.
+        self.acquisition_function.update(model=self.weighted_surrogate, eta=incumbent_value,
+                                         num_data=len(self.history_container.data))
+
+        challengers = self.acq_optimizer.maximize(
+            runhistory=self.history_container,
+            num_points=5000,
+            random_configuration_chooser=self.random_configuration_chooser
+        )
+        return challengers.challengers[:num_configs]
+
+    def choose_next_batch(self, num_config):
         if len(self.target_y[self.iterate_r[-1]]) == 0:
-            return sample_configurations(self.config_space, num_config)
+            configs = [self.config_space.sample_configuration()]
+            configs.extend(sample_configurations(self.config_space, num_config - 1))
+            return configs
 
-        config_cnt = 0
         config_candidates = list()
-        total_sample_cnt = 0
-
-        while config_cnt < num_config and total_sample_cnt < 3 * num_config:
-            incumbent = dict()
-            max_r = self.iterate_r[-1]
-            best_index = np.argmin(self.target_y[max_r])
-            incumbent['config'] = self.target_x[max_r][best_index]
-            approximate_obj = self.weighted_surrogate.predict(convert_configurations_to_array([incumbent['config']]))[0]
-            incumbent['obj'] = approximate_obj
-
-            self.weighted_acquisition_func.update(model=self.weighted_surrogate, eta=incumbent)
-            _config = self.weighted_acq_optimizer.maximize(batch_size=1)[0]
-
+        acq_configs = self.get_bo_candidates(num_configs=2*num_config)
+        acq_idx = 0
+        for idx in range(1, 1+2*num_config):
+            # Like BOHB, sample a fixed percentage of random configurations.
+            if self.random_configuration_chooser.check(self.iteration_id):
+                _config = self.config_space.sample_configuration()
+            else:
+                _config = acq_configs[acq_idx]
+                acq_idx += 1
             if _config not in config_candidates:
                 config_candidates.append(_config)
-                config_cnt += 1
-            total_sample_cnt += 1
+            if len(config_candidates) >= num_config:
+                break
 
-        if config_cnt < num_config:
+        if len(config_candidates) < num_config:
             config_candidates = expand_configurations(config_candidates, self.config_space, num_config)
         return config_candidates
 
