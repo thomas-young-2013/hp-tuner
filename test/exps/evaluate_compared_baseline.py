@@ -1,5 +1,6 @@
 import os
 import sys
+import random
 import argparse
 import numpy as np
 import pickle as pkl
@@ -18,8 +19,8 @@ from mfes.facade.tse import TSE
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
-                    choices=['fcnet', 'cifar', 'svhn', 'covtype', 'covtype_svm', 'mnist_svm', 'higgs', 'convnet'],
-                    default='fcnet')
+                    choices=['fcnet', 'cifar', 'cifar_alex', 'svhn', 'covtype', 'covtype_svm', 'mnist_svm', 'higgs',
+                             'convnet'], default='fcnet')
 parser.add_argument('--baseline', type=str, default='hb,bohb,mfse')
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=1)
@@ -49,6 +50,8 @@ if benchmark_id == 'fcnet':
     from mfes.evaluate_function.eval_fcnet_tf import train
 elif benchmark_id == 'cifar':
     from mfes.evaluate_function.eval_cifar import train
+elif benchmark_id == 'cifar_alex':
+    from mfes.evaluate_function.eval_cifar_alex import train
 elif benchmark_id == 'svhn':
     from mfes.evaluate_function.eval_svhn import train
 elif benchmark_id == 'covtype':
@@ -125,6 +128,7 @@ if __name__ == "__main__":
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = '1'
     cs = get_benchmark_configspace(benchmark_id)
     for _id in range(start_id, start_id + rep_num):
+        random.seed(start_id)
         for _baseline in baselines:
             evaluate_baseline(_baseline, cs, _id)
             # evaluate_objective_function(_baseline, _id)

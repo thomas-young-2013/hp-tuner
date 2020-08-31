@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import random
 from math import log, ceil
 from mfes.model.rf_with_instances import RandomForestWithInstances
 from mfes.utils.util_funcs import get_types
@@ -35,6 +36,7 @@ class SMAC(BaseFacade):
 
         self.incumbent_configs = []
         self.incumbent_obj = []
+        self.p = 0.3
 
     def iterate(self):
         n_loop = int(ceil(1.0 * self.inner_iteration_n / self.num_workers))
@@ -83,7 +85,7 @@ class SMAC(BaseFacade):
 
         conf_cnt = 0
         total_cnt = 0
-        next_configs = []
+        _next_configs = []
         while conf_cnt < num_config and total_cnt < 5 * num_config:
             incumbent = dict()
             best_index = np.argmin(self.incumbent_obj)
@@ -92,12 +94,22 @@ class SMAC(BaseFacade):
 
             self.acquisition_func.update(model=self.surrogate, eta=incumbent)
             rand_config = self.acq_optimizer.maximize(batch_size=1)[0]
-            if rand_config not in next_configs:
-                next_configs.append(rand_config)
+            if rand_config not in _next_configs:
+                _next_configs.append(rand_config)
                 conf_cnt += 1
             total_cnt += 1
         if conf_cnt < num_config:
-            next_configs = expand_configurations(next_configs, self.config_space, num_config)
+            _next_configs = expand_configurations(_next_configs, self.config_space, num_config)
+
+        next_configs = []
+
+        # Epsilon greedy
+        for config in _next_configs:
+            if random.random() < self.p:
+                next_configs.append(sample_configurations(self.config_space, 1)[0])
+            else:
+                next_configs.append(config)
+
         return next_configs
 
     def get_incumbent(self, num_inc=1):
