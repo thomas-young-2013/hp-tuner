@@ -55,6 +55,18 @@ def get_benchmark_configspace(benchmark_id):
         coef0_condition = InCondition(coef0, kernel, ["poly", "sigmoid"])
         cs.add_condition(degree_depends_on_poly)
         cs.add_condition(coef0_condition)
+    elif benchmark_id in ['covtype_svm2', 'mnist_svm2']:
+        C = UniformFloatHyperparameter("C", 1e-3, 1e5, log=True,
+                                       default_value=1.0)
+        kernel = UnParametrizedHyperparameter("kernel", "poly")
+        gamma = UniformFloatHyperparameter("gamma", 1e-5, 10, log=True, default_value=0.1)
+        tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-3,
+                                         log=True)
+        # cache size is not a hyperparameter, but an argument to the program!
+        max_iter = UnParametrizedHyperparameter("max_iter", 10000)
+
+        cs = ConfigurationSpace()
+        cs.add_hyperparameters([C, kernel, gamma, tol, max_iter])
     elif benchmark_id in ['cifar', 'svhn']:
         cs = ConfigurationSpace()
         # padding_size = CategoricalHyperparameter('padding_size', [1, 2, 3], default_value=2)
@@ -86,7 +98,7 @@ def get_benchmark_configspace(benchmark_id):
         weight_decay_conv3 = UniformFloatHyperparameter('weight_decay_conv3', lower=1e-5, upper=1e-1,
                                                         default_value=0.0002,
                                                         log=True)
-        weight_decay_fc = UniformFloatHyperparameter('weight_decay_fc', lower=1e-5, upper=1e-1,
+        weight_decay_fc = UniformFloatHyperparameter('weight_decay_fc', lower=1e-5, upper=1,
                                                      default_value=0.0002,
                                                      log=True)
         momentum = UniformFloatHyperparameter("momentum", 0.5, .99, default_value=0.9)

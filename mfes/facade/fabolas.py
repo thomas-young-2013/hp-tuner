@@ -6,6 +6,7 @@ import xgboost as xgb
 from robo.fmin import fabolas
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
 from matplotlib import pyplot as plt
 
 logging.basicConfig(level=logging.INFO)
@@ -23,12 +24,28 @@ class FABOLAS(object):
         self.s_time = time.time()
         os.makedirs(self.output_path, exist_ok=True)
 
-        from mfes.evaluate_function.eval_covtype import load_covtype
-        self.X, self.y = load_covtype()
-        self.num_cls = 7
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.2)
+        if 'covtype' in method_id:
+            from mfes.evaluate_function.eval_covtype_svm import load_covtype
+            self.X, self.y = load_covtype()
+            self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.2,
+                                                                                    stratify=self.y, random_state=1)
+            self.x_train, self.x_valid, self.y_train, self.y_valid = train_test_split(self.x_train, self.y_train,
+                                                                                      test_size=0.2,
+                                                                                      stratify=self.y_train,
+                                                                                      random_state=1)
+        elif 'mnist' in method_id:
+            from mfes.evaluate_function.eval_mnist_svm import load_mnist
+            self.X, self.y = load_mnist()
+            self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=1 / 7,
+                                                                                    stratify=self.y, random_state=1)
+            self.x_train, self.x_valid, self.y_train, self.y_valid = train_test_split(self.x_train, self.y_train,
+                                                                                      test_size=0.2,
+                                                                                      stratify=self.y_train,
+                                                                                      random_state=1)
+        else:
+            raise ValueError("Invalid method %s" % method_id)
         print('x_train shape:', self.x_train.shape)
-        print('x_train shape:', self.x_test.shape)
+        print('x_train shape:', self.x_valid.shape)
 
     # The optimization function that we want to optimize.
     # It gets a numpy array x with shape (D,) where D are the number of parameters
@@ -44,38 +61,21 @@ class FABOLAS(object):
         train_subset = self.x_train[shuffle[:s]]
         train_targets_subset = self.y_train[shuffle[:s]]
 
-        dmtrain = xgb.DMatrix(train_subset, label=train_targets_subset)
-        dmvalid = xgb.DMatrix(self.x_test, label=self.y_test)
-
-        num_round = 200
-        parameters = {}
-        parameter_names = ['eta', 'min_child_weight', 'max_depth', 'subsample', 'gamma', 'colsample_bytree', 'alpha',
-                           'lambda']
+        parameter_names = ['C', 'gamma', 'tol']
         assert len(parameter_names) == len(x)
-        for i, val in enumerate(x):
-            if parameter_names[i] == 'max_depth':
-                val = int(val)
-            parameters[parameter_names[i]] = val
-
-        if self.num_cls > 2:
-            parameters['num_class'] = self.num_cls
-            parameters['objective'] = 'multi:softmax'
-            parameters['eval_metric'] = 'merror'
-        elif self.num_cls == 2:
-            parameters['objective'] = 'binary:logistic'
-            parameters['eval_metric'] = 'error'
-
-        parameters['tree_method'] = 'hist'
-        parameters['booster'] = 'gbtree'
-        parameters['nthread'] = 2
-        parameters['silent'] = 1
-        watchlist = [(dmtrain, 'train'), (dmvalid, 'valid')]
-
-        model = xgb.train(parameters, dmtrain, num_round, watchlist, verbose_eval=0)
-        pred = model.predict(dmvalid)
-        if self.num_cls == 2:
-            pred = [int(i > 0.5) for i in pred]
-        err = 1 - accuracy_score(dmvalid.get_label(), pred)
+        C = x[0]
+        gamma = x[1]
+        tol = x[2]
+        model = SVC(C=C,
+                    kernel='rbf',
+                    gamma=gamma,
+                    tol=tol,
+                    max_iter=1500,
+                    random_state=1,
+                    decision_function_shape='ovr')
+        model.fit(train_subset, train_targets_subset)
+        pred = model.predict(self.x_valid)
+        err = 1 - accuracy_score(pred, self.y_valid)
 
         c = time.time() - start_time
 
@@ -111,8 +111,8 @@ class FABOLAS(object):
         # Defining the bounds and dimensions of the
         # input space (configuration space + environment space)
         # We also optimize the hyperparameters of the svm on a log scale
-        lower = np.array([0.01, 0, 1, 0.1, 0, 0.1, 0, 1])
-        upper = np.array([0.9, 10, 12, 1, 10, 1, 10, 10])
+        lower = np.array([1e-3, 1e-5, 1e-5])
+        upper = np.array([1e5, 10, 1e-1])
 
         # Start Fabolas to optimize the objective function
         try:
