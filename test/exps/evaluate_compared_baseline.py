@@ -19,8 +19,9 @@ from mfes.facade.tse import TSE
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--benchmark', type=str,
-                    choices=['fcnet', 'cifar', 'cifar_alex', 'svhn', 'covtype', 'covtype_svm', 'mnist_svm', 'higgs',
-                             'convnet', 'sys_mnist'], default='fcnet')
+                    # choices=['fcnet', 'cifar', 'cifar_alex', 'svhn', 'covtype', 'covtype_svm', 'mnist_svm', 'higgs',
+                    #          'convnet', 'sys_mnist'],
+                    default='fcnet')
 parser.add_argument('--baseline', type=str, default='hb,bohb,mfse')
 parser.add_argument('--R', type=int, default=81)
 parser.add_argument('--n', type=int, default=1)
@@ -68,6 +69,12 @@ elif benchmark_id == 'convnet':
     from mfes.evaluate_function.eval_convnet_tf import train
 elif benchmark_id == 'sys_mnist':
     from mfes.evaluate_function.eval_sys_mnist import train
+elif benchmark_id == 'sys_adult':
+    from mfes.evaluate_function.eval_sys_adult import train
+elif benchmark_id == 'sys_letter':
+    from mfes.evaluate_function.eval_sys_letter import train
+elif benchmark_id == 'sys_optdigits':
+    from mfes.evaluate_function.eval_sys_optdigits import train
 else:
     raise ValueError('Unsupported Ojbective function: %s' % benchmark_id)
 
