@@ -133,6 +133,11 @@ def get_benchmark_configspace(benchmark_id):
                 cs.add_conditions([k_init_cond, k_reg_cond])
 
         return cs
+    elif 'sys' in benchmark_id:
+        import pickle as pkl
+        with open('sys_cs.pkl', 'rb') as f:
+            cs = pkl.load(f)
+        return cs
     else:
         raise ValueError('Invalid benchmark id: %s!' % benchmark_id)
     return cs

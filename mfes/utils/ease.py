@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from mfes.config_space.util import get_configuration_id
 import hashlib
 
@@ -40,7 +41,10 @@ def ease_target(*dargs, **dkargs):
             conf_cp['read_path'] = ref_model_path
             conf_cp['save_path'] = model_path
             conf_cp['need_lc'] = needed_lc
-            result = func(args[0], conf_cp, kargs)
+            try:
+                result = func(args[0], conf_cp, kargs)
+            except:
+                result = {'loss': np.inf, 'early_stop': False, 'lc_info': []}
 
             if 'ref_id' not in result:
                 result['ref_id'] = conf_id
