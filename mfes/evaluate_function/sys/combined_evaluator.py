@@ -79,9 +79,6 @@ def get_combined_cs(node, task_type=0):
         cs.add_condition(cond)
     for bid in fe_cs.get_forbiddens():
         cs.add_forbidden_clause(bid)
-
-    with open('sys_cs.pkl', 'wb')as f:
-        pkl.dump(cs, f)
     return cs
 
 

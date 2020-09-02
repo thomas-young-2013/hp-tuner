@@ -134,9 +134,11 @@ def get_benchmark_configspace(benchmark_id):
 
         return cs
     elif 'sys' in benchmark_id:
-        import pickle as pkl
-        with open('sys_cs.pkl', 'rb') as f:
-            cs = pkl.load(f)
+        from mfes.evaluate_function.sys.combined_evaluator import get_combined_cs
+        from solnml.datasets.utils import load_data
+
+        tmp_node = load_data('balloon', data_dir='../soln-ml/', task_type=0, datanode_returned=True)
+        cs = get_combined_cs(tmp_node)
         return cs
     else:
         raise ValueError('Invalid benchmark id: %s!' % benchmark_id)
