@@ -19,9 +19,6 @@ from solnml.components.models.classification import _classifiers, _addons
 
 from mfes.utils.ease import ease_target
 
-train_node, test_node = load_train_test_data('balloon', data_dir='/Users/shenyu/PycharmProjects/soln-ml/', task_type=0)
-
-
 def get_estimator(config):
     classifier_type = config['estimator']
     config_ = config.copy()
