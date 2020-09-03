@@ -19,6 +19,7 @@ from solnml.components.models.classification import _classifiers, _addons
 
 from mfes.utils.ease import ease_target
 
+
 def get_estimator(config):
     classifier_type = config['estimator']
     config_ = config.copy()
@@ -129,4 +130,4 @@ def train(resource_num, params, data_node):
 
     print(resource_num, params, -score, time.time() - start_time)
     # Turn it intos a minimization problem.
-    return {'loss': -score, 'early_stop': False, 'lc_info': []}
+    return {'loss': 1 - score, 'early_stop': False, 'lc_info': []}
