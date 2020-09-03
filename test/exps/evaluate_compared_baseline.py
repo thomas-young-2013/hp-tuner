@@ -73,8 +73,14 @@ elif benchmark_id == 'sys_adult':
     from mfes.evaluate_function.eval_sys_adult import train
 elif benchmark_id == 'sys_letter':
     from mfes.evaluate_function.eval_sys_letter import train
-elif benchmark_id == 'sys_optdigits':
-    from mfes.evaluate_function.eval_sys_optdigits import train
+elif benchmark_id == 'sys_codrna':
+    from mfes.evaluate_function.eval_sys_codrna import train
+elif benchmark_id == 'sys_higgs':
+    from mfes.evaluate_function.eval_sys_higgs import train
+elif benchmark_id == 'sys_a9a':
+    from mfes.evaluate_function.eval_sys_a9a import train
+elif benchmark_id == 'sys_covertype':
+    from mfes.evaluate_function.eval_sys_covertype import train
 else:
     raise ValueError('Unsupported Ojbective function: %s' % benchmark_id)
 
