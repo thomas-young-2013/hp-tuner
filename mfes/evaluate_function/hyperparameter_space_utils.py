@@ -81,7 +81,7 @@ def get_benchmark_configspace(benchmark_id):
         momentum = UniformFloatHyperparameter("momentum", 0.5, .99, default_value=0.9)
         nesterov = CategoricalHyperparameter('nesterov', ['True', 'False'], default_value='True')
         cs.add_hyperparameters([nesterov, batch_size, init_lr, lr_decay_factor, weight_decay, momentum])
-    elif benchmark_id in ['cifar_alex', 'svhn_alex']:
+    elif benchmark_id in ['cifar_alex', 'svhn_alex'] or 'cifar_alex' in benchmark_id:
         cs = ConfigurationSpace()
         batch_size = UnParametrizedHyperparameter('train_batch_size', 100)
         dropout_rate = UniformFloatHyperparameter('dropout_rate', lower=0.1, upper=0.7, default_value=0.5)
