@@ -79,6 +79,7 @@ class MFSE(BaseFacade):
             self.target_y[r] = []
 
         # BO optimizer settings.
+        self.configs = list()
         self.history_container = HistoryContainer('mfse-container')
         self.sls_max_steps = None
         self.n_sls_iterations = 5
@@ -214,12 +215,13 @@ class MFSE(BaseFacade):
         if len(self.target_y[self.iterate_r[-1]]) == 0:
             configs = [self.config_space.sample_configuration()]
             configs.extend(sample_configurations(self.config_space, num_config - 1))
+            self.configs.extend(configs)
             return configs
 
         config_candidates = list()
-        acq_configs = self.get_bo_candidates(num_configs=2*num_config)
+        acq_configs = self.get_bo_candidates(num_configs=2 * num_config)
         acq_idx = 0
-        for idx in range(1, 1+2*num_config):
+        for idx in range(1, 1 + 2 * num_config):
             # Like BOHB, sample a fixed percentage of random configurations.
             if self.random_configuration_chooser.check(idx):
                 _config = self.config_space.sample_configuration()
@@ -233,7 +235,13 @@ class MFSE(BaseFacade):
 
         if len(config_candidates) < num_config:
             config_candidates = expand_configurations(config_candidates, self.config_space, num_config)
-        return config_candidates
+
+        _config_candidates = []
+        for config in config_candidates:
+            if config not in self.configs:  # Check if evaluated
+                _config_candidates.append(config)
+        self.configs.extend(_config_candidates)
+        return _config_candidates
 
     @staticmethod
     def calculate_ranking_loss(y_pred, y_true):
@@ -282,10 +290,10 @@ class MFSE(BaseFacade):
                         mean, var = self.weighted_surrogate.surrogate_container[r].predict(test_x)
                         tmp_y = np.reshape(mean, -1)
                         preorder_num, pair_num = MFSE.calculate_preserving_order_num(tmp_y, test_y)
-                        preserving_order_p.append(preorder_num/pair_num)
+                        preserving_order_p.append(preorder_num / pair_num)
                         preserving_order_nums.append(preorder_num)
                     else:
-                        if len(test_y) < 2*fold_num:
+                        if len(test_y) < 2 * fold_num:
                             preserving_order_p.append(0)
                         else:
                             # 5-fold cross validation.
