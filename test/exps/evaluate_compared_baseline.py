@@ -69,16 +69,16 @@ elif benchmark_id == 'convnet':
     from mfes.evaluate_function.eval_convnet_tf import train
 elif benchmark_id == 'sys_mnist':
     from mfes.evaluate_function.eval_sys_mnist import train
-elif benchmark_id == 'sys_bank_marketing':
-    from mfes.evaluate_function.eval_sys_bank_marketing import train
+elif benchmark_id == 'sys_mv':
+    from mfes.evaluate_function.eval_sys_mv import train
 elif benchmark_id == 'sys_letter':
     from mfes.evaluate_function.eval_sys_letter import train
-elif benchmark_id == 'sys_codrna':
-    from mfes.evaluate_function.eval_sys_codrna import train
-elif benchmark_id == 'sys_electricity':
-    from mfes.evaluate_function.eval_sys_electricity import train
-elif benchmark_id == 'sys_a9a':
-    from mfes.evaluate_function.eval_sys_a9a import train
+elif benchmark_id == 'sys_fried':
+    from mfes.evaluate_function.eval_sys_fried import train
+elif benchmark_id == 'sys_2dplanes':
+    from mfes.evaluate_function.eval_sys_2dplanes import train
+elif benchmark_id == 'sys_kropt':
+    from mfes.evaluate_function.eval_sys_kropt import train
 elif benchmark_id == 'sys_covertype':
     from mfes.evaluate_function.eval_sys_covertype import train
 else:
