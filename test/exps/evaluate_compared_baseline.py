@@ -81,8 +81,8 @@ elif benchmark_id == 'sys_kropt':
     from mfes.evaluate_function.eval_sys_kropt import train
 elif benchmark_id == 'sys_covertype':
     from mfes.evaluate_function.eval_sys_covertype import train
-elif benchmark_id == 'sys_higgs':
-    from mfes.evaluate_function.eval_sys_higgs import train
+elif benchmark_id == 'sys_poker':
+    from mfes.evaluate_function.eval_sys_poker import train
 else:
     raise ValueError('Unsupported Ojbective function: %s' % benchmark_id)
 
