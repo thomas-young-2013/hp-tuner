@@ -1,5 +1,5 @@
-## Hyperparameter Tuning Project
-In this project, we provided a hyperparameter optimization method based on Hyperband.
+## MFES-HB: Efficient Hyperband with Multi-Fidelity Quality Measurements
+In this project, we implemented the proposed Hyperband-style HPO method that is capable of utilizing the multi-fidelity measurements.
 
 ### Experimental Environment Installation.
 Software needed: 1) anaconda, 2) python>=3.5.
@@ -19,18 +19,14 @@ Install necessary requirements:
 ### Experiments Design
 See test/exps/evaluate_compared_baseline.py to get the name of each baseline method.
 
-##### Exp.1: compare different versions of MFES.
-Exp settings: runtime_limit=18000, n_worker=1, rep=5.
+##### Exp.1: compare different versions of MFES and the sensitivity analysis.
+Exp settings: runtime_limit=18000, n_worker=1, rep=10.
 
-Script: `python test/exps/evaluate_weight_method.py --methods 'rank_loss_p_norm-2,rank_loss_p_norm-3,rank_loss_p_norm-1,rank_loss_single,rank_loss_prob' --rep 10 --runtime_limit 18000`
+To conduct the experiment shown in Figure 3(a), the script is as follows:
+Script: `python test/exps/evaluate_weight_method.py --methods 'rank_loss_single,equal_weight,rank_loss_p_norm-3,hb,bohb' --rep 10 --runtime_limit 18000`
 
-| versions | type | details |
-| :-----| :---- | :---- |
-| 0.9 | only-1-source | select one source and use it |
-| 1.0 | multi-source: weight | using multi source, map #ordered-pairs-percentage int prob (power_num=1,2,3) |
-| 1.1 | multi-source: weight | using multi source, weight each model with the probability that it is the model in the ensemble with the lowest ranking loss |
-| 1.2 | multi-source: fusion | gpoe and independently combination |
-
+To obtain the results in Figure 3(c), the script is as follows:
+Script: `python test/exps/evaluate_weight_method.py --methods 'rank_loss_p_norm-1,rank_loss_p_norm-2,rank_loss_p_norm-3,rank_loss_p_norm-4,bohb,idp' --rep 10 --runtime_limit 18000`
 
 ##### Exp.2: Result comparison on XGBoost-Covtype.
 Exp settings: runtime_limit=27000, n_worker=1, rep=10, R=27.
