@@ -21,7 +21,8 @@ See test/exps/evaluate_compared_baseline.py to get the name of each baseline met
 
 ##### Exp.1: compare different versions of MFES.
 Exp settings: runtime_limit=18000, n_worker=1, rep=5.
-Execution scripts: `python test/exps/evaluate_weight_method.py --methods 'rank_loss_p_norm-2,rank_loss_p_norm-3,rank_loss_p_norm-1,rank_loss_single,rank_loss_prob' --rep 5 --runtime_limit 18000`
+
+Script: `python test/exps/evaluate_weight_method.py --methods 'rank_loss_p_norm-2,rank_loss_p_norm-3,rank_loss_p_norm-1,rank_loss_single,rank_loss_prob' --rep 5 --runtime_limit 18000`
 
 | versions | type | details |
 | :-----| :---- | :---- |
