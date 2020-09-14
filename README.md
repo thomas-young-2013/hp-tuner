@@ -1,8 +1,8 @@
 ## Hyperparameter Tuning Project
-In this project, we provided a hyperparameter optimization method based Hyperband.
+In this project, we provided a hyperparameter optimization method based on Hyperband.
 
 ### Experimental Environment Installation.
-Software needed: 1) anaconda, 2) python=3.5 .
+Software needed: 1) anaconda, 2) python>=3.5.
 
 Install necessary requirements:
 - Softwares: `sudo apt-get install libeigen3-dev swig3.0 gfortran`.
