@@ -33,24 +33,31 @@ Execution scripts: `python test/exps/evaluate_weight_method.py --methods 'rank_l
 
 ##### Exp.2: Result comparison on FCNet-MNIST.
 Exp settings: runtime_limit=18000, n_worker=1, rep=10.
+
 Compared methods: mfes-hb, hb, bohb, lcnet-hb, smac, smac-es, random_search.
 
 
 ##### Exp.3: Result comparison on RESNet-CIFAR10.
 Exp settings: runtime_limit=50000, n_worker=1, rep=10, R=81.
+
 Compared methods: mfes-hb, hb, bohb, lcnet-hb, smac, smac-es, random_search.
 
 ##### Exp.4: Result comparison on XGBoost-Covtype.
 Exp settings: runtime_limit=27000, n_worker=1, rep=10, R=27.
+
 Compared methods: mfes-hb, hb, bohb, tse, fabolas, smac, random_search.
+
 Data path: data/covtype/covtype.data
 
 
 ##### Exp.5: Parallel version evaluations on ResNet-CIFAR10. Set the fraction in tf_gpu_option to be less than 0.33
 Exp settings: runtime_limit=50000, n_worker=3, rep=10.
+
 Compared methods: mfes-hb, hb, bohb, batch-bo, random_search.
 
 ##### Exp.6: Result comparison on System.
 Exp setting: runtime_limit=14400, n_worker=1, rep=10, R=27
+
 Compared methods: mfes-hb, smac
+
 Data path: data/cls_datasets/example.csv (The required csv name is written in each evaluate function.)
