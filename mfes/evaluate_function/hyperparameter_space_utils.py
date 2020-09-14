@@ -55,19 +55,7 @@ def get_benchmark_configspace(benchmark_id):
         coef0_condition = InCondition(coef0, kernel, ["poly", "sigmoid"])
         cs.add_condition(degree_depends_on_poly)
         cs.add_condition(coef0_condition)
-    elif benchmark_id in ['covtype_svm2', 'mnist_svm2']:
-        C = UniformFloatHyperparameter("C", 1e-3, 1e5, log=True,
-                                       default_value=1.0)
-        kernel = UnParametrizedHyperparameter("kernel", "poly")
-        gamma = UniformFloatHyperparameter("gamma", 1e-5, 10, log=True, default_value=0.1)
-        tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-3,
-                                         log=True)
-        # cache size is not a hyperparameter, but an argument to the program!
-        max_iter = UnParametrizedHyperparameter("max_iter", 10000)
-
-        cs = ConfigurationSpace()
-        cs.add_hyperparameters([C, kernel, gamma, tol, max_iter])
-    elif benchmark_id in ['cifar', 'svhn']:
+    elif benchmark_id == 'cifar':
         cs = ConfigurationSpace()
         # padding_size = CategoricalHyperparameter('padding_size', [1, 2, 3], default_value=2)
         # batch_size = CategoricalHyperparameter('train_batch_size', [256])
@@ -81,30 +69,6 @@ def get_benchmark_configspace(benchmark_id):
         momentum = UniformFloatHyperparameter("momentum", 0.5, .99, default_value=0.9)
         nesterov = CategoricalHyperparameter('nesterov', ['True', 'False'], default_value='True')
         cs.add_hyperparameters([nesterov, batch_size, init_lr, lr_decay_factor, weight_decay, momentum])
-    elif benchmark_id in ['cifar_alex', 'svhn_alex'] or 'cifar_alex' in benchmark_id:
-        cs = ConfigurationSpace()
-        batch_size = UnParametrizedHyperparameter('train_batch_size', 100)
-        dropout_rate = UniformFloatHyperparameter('dropout_rate', lower=0.1, upper=0.7, default_value=0.5)
-        init_lr = UniformFloatHyperparameter('init_lr', lower=1e-3, upper=0.3, default_value=0.1, log=True)
-        # lr_decay_factor = UniformFloatHyperparameter('lr_decay_factor', lower=0.01, upper=0.2, default_value=0.1,
-        #                                              log=True)
-        lr_decay_factor = UnParametrizedHyperparameter('lr_decay_factor', 0.1)
-        weight_decay_conv1 = UniformFloatHyperparameter('weight_decay_conv1', lower=1e-5, upper=1e-1,
-                                                        default_value=0.0002,
-                                                        log=True)
-        weight_decay_conv2 = UniformFloatHyperparameter('weight_decay_conv2', lower=1e-5, upper=1e-1,
-                                                        default_value=0.0002,
-                                                        log=True)
-        weight_decay_conv3 = UniformFloatHyperparameter('weight_decay_conv3', lower=1e-5, upper=1e-1,
-                                                        default_value=0.0002,
-                                                        log=True)
-        weight_decay_fc = UniformFloatHyperparameter('weight_decay_fc', lower=1e-5, upper=1,
-                                                     default_value=0.0002,
-                                                     log=True)
-        momentum = UniformFloatHyperparameter("momentum", 0.5, .99, default_value=0.9)
-        cs.add_hyperparameters(
-            [dropout_rate, batch_size, init_lr, lr_decay_factor, weight_decay_conv1, weight_decay_conv2,
-             weight_decay_conv3, weight_decay_fc, momentum])
     elif benchmark_id == 'convnet':
         cs = ConfigurationSpace()
 

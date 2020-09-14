@@ -51,22 +51,10 @@ if benchmark_id == 'fcnet':
     from mfes.evaluate_function.eval_fcnet_tf import train
 elif benchmark_id == 'cifar':
     from mfes.evaluate_function.eval_cifar import train
-elif 'cifar_alex' in benchmark_id:
-    from mfes.evaluate_function.eval_cifar_alex import train
-elif benchmark_id == 'svhn':
-    from mfes.evaluate_function.eval_svhn import train
 elif benchmark_id == 'covtype':
     from mfes.evaluate_function.eval_covtype import train
-elif benchmark_id == 'covtype_svm':
-    from mfes.evaluate_function.eval_covtype_svm import train
-elif benchmark_id == 'mnist_svm':
-    from mfes.evaluate_function.eval_mnist_svm import train
-elif benchmark_id == 'higgs':
-    from mfes.evaluate_function.eval_higgs import train
 elif benchmark_id == 'resnet_cifar100':
     from mfes.evaluate_function.eval_resnet_cifar100 import train
-elif benchmark_id == 'convnet':
-    from mfes.evaluate_function.eval_convnet_tf import train
 elif benchmark_id == 'sys_mnist':
     from mfes.evaluate_function.eval_sys_mnist import train
 elif benchmark_id == 'sys_mv':
@@ -79,10 +67,14 @@ elif benchmark_id == 'sys_2dplanes':
     from mfes.evaluate_function.eval_sys_2dplanes import train
 elif benchmark_id == 'sys_kropt':
     from mfes.evaluate_function.eval_sys_kropt import train
-elif benchmark_id == 'sys_covertype':
-    from mfes.evaluate_function.eval_sys_covertype import train
+elif benchmark_id == 'sys_electricity':
+    from mfes.evaluate_function.eval_sys_electricity import train
 elif benchmark_id == 'sys_poker':
     from mfes.evaluate_function.eval_sys_poker import train
+elif benchmark_id == 'sys_higgs':
+    from mfes.evaluate_function.eval_sys_higgs import train
+elif benchmark_id == 'sys_a9a':
+    from mfes.evaluate_function.eval_sys_a9a import train
 else:
     raise ValueError('Unsupported Ojbective function: %s' % benchmark_id)
 
