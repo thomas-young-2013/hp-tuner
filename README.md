@@ -5,7 +5,8 @@ In this project, we provided a hyperparameter optimization method based Hyperban
 Software needed: 1) anaconda, 2) python=3.5 .
 
 Install necessary requirements:
-- Softwares: `sudo apt-get install libeigen3-dev swig gfortran`.
+- Softwares: `sudo apt-get install libeigen3-dev swig3.0 gfortran`.
+- Run `ln -s /usr/bin/swig3.0 /usr/bin/swig`
 - Python packages: `for req in $(cat requirements.txt); do pip install $req; done`.
 
 ## Docs
