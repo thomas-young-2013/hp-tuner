@@ -32,22 +32,7 @@ Script: `python test/exps/evaluate_weight_method.py --methods 'rank_loss_p_norm-
 | 1.2 | multi-source: fusion | gpoe and independently combination |
 
 
-##### Exp.2: Result comparison on FCNet-MNIST.
-Exp settings: runtime_limit=18000, n_worker=1, rep=10.
-
-Compared methods: mfes-hb, hb, bohb, lcnet-hb, smac, smac-es, random_search.
-
-Script: `python test/exps/evaluate_compared_baseline.py --runtime_limit 18000 --benchmark fcnet --baseline your_choice --rep_num 10`
-
-
-##### Exp.3: Result comparison on RESNet-CIFAR10.
-Exp settings: runtime_limit=50000, n_worker=1, rep=10, R=81.
-
-Compared methods: mfes-hb, hb, bohb, lcnet-hb, smac, smac-es, random_search.
-
-Script: `python test/exps/evaluate_compared_baseline.py --runtime_limit 50000 --benchmark cifar --baseline your_choice --rep_num 10`
-
-##### Exp.4: Result comparison on XGBoost-Covtype.
+##### Exp.2: Result comparison on XGBoost-Covtype.
 Exp settings: runtime_limit=27000, n_worker=1, rep=10, R=27.
 
 Compared methods: mfes-hb, hb, bohb, tse, fabolas, smac, random_search.
@@ -57,14 +42,7 @@ Data path: data/covtype/covtype.data
 Script: `python test/exps/evaluate_compared_baseline.py --runtime_limit 27000 --benchmark covtype --R 27 --baseline your_choice --rep_num 10`
 
 
-##### Exp.5: Parallel version evaluations on ResNet-CIFAR10. Set the fraction in tf_gpu_option to be less than 0.33
-Exp settings: runtime_limit=50000, n_worker=3, rep=10.
-
-Compared methods: mfes-hb, hb, bohb, batch-bo, random_search.
-
-Script: `python test/exps/evaluate_compared_baseline.py --runtime_limit 50000 --benchmark cifar --baseline your_choice --rep_num 10 --n 3`
-
-##### Exp.6: Result comparison on System.
+##### Exp.3: Result comparison on System.
 Exp setting: runtime_limit=14400, n_worker=1, rep=10, R=27
 
 Compared methods: mfes-hb, smac
@@ -72,3 +50,19 @@ Compared methods: mfes-hb, smac
 Data path: data/cls_datasets/example.csv (The required csv name is written in each evaluate function.)
 
 Script: `python test/exps/evaluate_compared_baseline.py --runtime_limit 14400 --benchmark sys_letter --R 27 --baseline your_choice --rep_num 10`
+
+
+##### Exp.4: Result comparison on FCNet-MNIST.
+Exp settings: runtime_limit=18000, n_worker=1, rep=10.
+
+Compared methods: mfes-hb, hb, bohb, lcnet-hb, smac, smac-es, random_search.
+
+Script: `python test/exps/evaluate_compared_baseline.py --runtime_limit 18000 --benchmark fcnet --baseline your_choice --rep_num 10`
+
+
+##### Exp.5: Parallel version evaluations on ResNet-CIFAR10. Set the fraction in tf_gpu_option to be less than 0.33
+Exp settings: runtime_limit=50000, n_worker=3, rep=10.
+
+Compared methods: mfes-hb, hb, bohb, batch-bo, random_search.
+
+Script: `python test/exps/evaluate_compared_baseline.py --runtime_limit 50000 --benchmark cifar --baseline your_choice --rep_num 10 --n 3`
