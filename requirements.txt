@@ -24,8 +24,11 @@ git+https://github.com/Lasagne/Lasagne.git
 git+https://github.com/automl/george.git
 git+https://github.com/stokasto/sgmcmc.git
 git+https://github.com/automl/HPOlib2.git
+git+https://github.com/thomas-young-2013/lite-bo.git
 nose
 
+
+tensorflow==1.13.1
 xgboost
 torch
 keras
