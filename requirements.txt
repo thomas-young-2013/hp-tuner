@@ -28,7 +28,7 @@ git+https://github.com/thomas-young-2013/lite-bo.git
 nose
 
 
-tensorflow==1.13.1
+tensorflow_gpu==1.7.0
 xgboost
 torch
 keras
