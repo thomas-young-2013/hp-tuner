@@ -112,8 +112,6 @@ def create_plot_points(data, start_time, end_time, point_num=500):
         _mean.append(np.mean(perf_list))
         _var.append(np.std(perf_list))
     # Used to plot errorbar.
-    # TODO: Delete this
-    _var = np.array(_var) * 0.8
     return x, np.array(_mean), np.array(_var)
 
 
@@ -145,13 +143,6 @@ if __name__ == "__main__":
                 array = np.load(path)
                 # array_list.append(1 + array)
                 # print(array)
-                if method == 'fabolas':
-                    array[1] = array[1] - 0.023
-                    array[0] = array[0] + 300
-                if method == 'tse':
-                    array[0] = array[0] - 4200
-                if benchmark_id == 'sys_letter' and method == 'bohb':
-                    array[1] = array[1] + 0.004
                 array_list.append(array)
             if method == 'random_search':
                 label_name = r'\textbf{RS}'
@@ -166,12 +157,6 @@ if __name__ == "__main__":
                 else:
                     label_name = r'\textbf{%s}' % (method.upper().replace('_', '-'))
             x, y_mean, y_var = create_plot_points(array_list, 1, runtime_limit, point_num=n_points)
-            # if method == 'mfse':
-            #     y_mean = smooth(y_mean, 50, 100, 10)
-            # if method == 'bohb':
-            #     y_mean = smooth(y_mean, 50, 100, 10)
-            # if method == 'smac':
-            #     y_mean = smooth(y_mean, 60, 100, 10)
             if n_worker == 1:
                 ax.plot(x, y_mean, lw=lw,
                         label=label_name, color=color_dict[method],
