@@ -8,5 +8,5 @@ from solnml.datasets.utils import load_train_test_data
 
 from mfes.evaluate_function.sys.combined_evaluator import train as _train
 
-train_node, test_node = load_train_test_data('fried', data_dir='../soln-ml/', task_type=0)
+train_node, test_node = load_train_test_data('fried', data_dir='./', task_type=0)
 train = partial(_train, data_node=train_node)

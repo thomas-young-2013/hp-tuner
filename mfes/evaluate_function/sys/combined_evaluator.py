@@ -90,7 +90,7 @@ def get_fit_params(y, estimator):
     return _init_params, _fit_params
 
 
-tmp_node = load_data('letter', data_dir='../soln-ml/', task_type=0, datanode_returned=True)
+tmp_node = load_data('letter(1)', data_dir='./', task_type=0, datanode_returned=True)
 tmp_evaluator = ClassificationEvaluator(None)
 tmp_bo = AnotherBayesianOptimizationOptimizer(0, tmp_node, tmp_evaluator, 'adaboost', 1, 1, 1)
 
