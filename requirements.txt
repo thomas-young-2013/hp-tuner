@@ -29,7 +29,7 @@ git+https://github.com/automl/RoBO.git@lcnet
 nose
 
 
-tensorflow_gpu==1.7.0
+tensorflow_gpu==2.5.3
 xgboost
 torch
 keras
